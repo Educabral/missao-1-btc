@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Missão 1 BTC — Tracker</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0f0f0f">
+<link rel="apple-touch-icon" href="https://cryptologos.cc/logos/bitcoin-btc-logo.png">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+
+<!-- SCRIPTS EXTERNOS (GRÁFICO E CONFETES) -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+<style>
+/* ── TOKENS ── */
+:root {
+  --bg:#0f0e0c; --surface:#161513; --surface2:#1c1a17; --surface3:#242118;
+  --border:#2a2823; --text:#e8e4dd; --muted:#8a8680; --faint:#4a4845;
+  --btc:#F7931A; --btc-dim:rgba(247,147,26,0.15); --btc-bg:rgba(247,147,26,0.12);
+  --green:#6daa45; --green-bg:rgba(109,170,69,0.14);
+  --red:#dd6974;   --red-bg:rgba(221,105,116,0.14);
+  --yellow:#e8af34;
+  --r:14px; --rsm:8px; --rxs:6px;
+  --font:'Satoshi',system-ui,sans-serif;
+  --mono:'JetBrains Mono',monospace;
+  --shadow:0 8px 40px rgba(0,0,0,.55);
+  --t:180ms cubic-bezier(.16,1,.3,1);
+}
+[data-theme="light"] {
+  --bg:#f5f4f0; --surface:#ffffff; --surface2:#f0ede8; --surface3:#e6e2db;
+  --border:#ddd9d3; --text:#1e1c17; --muted:#6b6965; --faint:#b0aead;
+  --btc-bg:rgba(247,147,26,0.10); --green-bg:rgba(109,170,69,0.10);
+  --red-bg:rgba(221,105,116,0.10);
+  --shadow:0 8px 40px rgba(0,0,0,.09);
+}
+/* ── RESET ── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;scroll-behavior:smooth}
+body{min-height:100dvh;font-family:var(--font);font-size:15px;color:var(--text);background:var(--bg);line-height:1.5}
+button{cursor:pointer;border:none;background:none;font:inherit;color:inherit;transition:color var(--t),background var(--t),border-color var(--t),box-shadow var(--t),transform var(--t),filter var(--t)}
+input,select{font:inherit;color:var(--text);background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--rsm);padding:10px 14px;width:100%;outline:none;transition:border-color var(--t),box-shadow var(--t)}
+input:focus,select:focus{border-color:var(--btc);box-shadow:0 0 0 3px var(--btc-dim)}
+input::placeholder{color:var(--faint)}
+input[type=number]{-moz-appearance:textfield}
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none}
+
+/* ── MODO PRIVACIDADE ── */
+body.privacy-mode .kpi-val,
+body.privacy-mode .hero-btc span,
+body.privacy-mode .hero-pct,
+body.privacy-mode .falta-val,
+body.privacy-mode .pill-btc,
+body.privacy-mode .estat-val,
+body.privacy-mode .td-mono {
+    filter: blur(6px);
+    opacity: 0.8;
+    user-select: none;
+    pointer-events: none;
+    transition: filter 0.3s ease, opacity 0.3s ease;
+}
+
+/* ── LAYOUT ── */
+.wrap{max-width:1080px;margin:0 auto;padding:0 20px 60px}
+
+/* ── HEADER ── */
+header{display:flex;align-items:center;justify-content:space-between;padding:20px 0 18px;border-bottom:1px solid var(--border);gap:12px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:12px}
+.brand-icon{width:38px;height:38px;background:var(--btc);border-radius:10px;display:grid;place-items:center;font-size:20px;font-weight:800;color:#000;flex-shrink:0;box-shadow:0 0 20px rgba(247,147,26,.25);user-select:none;aria-hidden:true}
+.brand-name{font-size:17px;font-weight:700;letter-spacing:-.3px}
+.brand-sub{font-size:11px;color:var(--muted)}
+.header-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+
+/* Preço */
+.price-pill{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border);border-radius:999px;padding:7px 16px;font-size:13px;white-space:nowrap}
+.price-dot{width:7px;height:7px;border-radius:50%;background:var(--green);flex-shrink:0}
+.price-dot.live{animation:blink 2s infinite}
+.price-dot.error{background:var(--red)}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.price-num{font-family:var(--mono);font-weight:600;color:var(--btc)}
+.price-chg{font-size:11px;font-family:var(--mono)}
+
+/* Botão de tema e privacidade */
+.icon-btn{width:36px;height:36px;border-radius:var(--rxs);border:1px solid var(--border);display:grid;place-items:center;color:var(--muted)}
+.icon-btn:hover{background:var(--surface2);color:var(--text)}
+.icon-btn:focus-visible{outline:2px solid var(--btc);outline-offset:2px}
+
+/* ── HERO ── */
+.hero{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:28px;margin-top:20px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 90% 55% at 50% -5%,rgba(247,147,26,.10),transparent 70%);pointer-events:none}
+.hero-top{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:16px;margin-bottom:22px;position:relative}
+.hero-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;margin-bottom:5px}
+.hero-btc{font-family:var(--mono);font-size:clamp(22px,4vw,32px);font-weight:700;color:var(--btc);line-height:1.1;word-break:break-all}
+.hero-btc small{font-size:15px;color:var(--muted);font-weight:400}
+.hero-pct{font-family:var(--mono);font-size:clamp(22px,3.5vw,30px);font-weight:700;color:var(--btc)}
+
+/* KPIs */
+.kpi-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:22px}
+.kpi{background:var(--surface2);border:1px solid var(--border);border-radius:var(--rsm);padding:14px 16px}
+.kpi-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px}
+.kpi-val{font-family:var(--mono);font-size:clamp(13px,2vw,16px);font-weight:600;word-break:break-all}
+.kpi-val.green{color:var(--green)}
+.kpi-val.btc-color{color:var(--btc)}
+
+/* Progress bar */
+.prog-wrap{position:relative;padding-top:26px;margin-bottom:2px}
+.prog-pct-lbl{position:absolute;top:0;transform:translateX(-50%);font-family:var(--mono);font-size:11px;color:var(--btc);font-weight:600;transition:left var(--t);white-space:nowrap;pointer-events:none}
+.prog-bg{height:12px;background:var(--surface3);border-radius:999px;overflow:hidden}
+.prog-fill{height:100%;background:linear-gradient(90deg,rgba(247,147,26,.4),var(--btc));border-radius:999px;transition:width .9s cubic-bezier(.16,1,.3,1);position:relative;min-width:0}
+.prog-fill.has-value::after{content:'';position:absolute;right:0;top:0;bottom:0;width:3px;background:var(--btc);border-radius:999px;box-shadow:0 0 8px var(--btc)}
+
+/* Milestones */
+.milestones{display:flex;gap:6px;flex-wrap:wrap;margin-top:14px}
+.ms{font-size:11px;padding:3px 10px;border-radius:999px;border:1px solid var(--border);color:var(--faint);font-family:var(--mono);transition:all .35s}
+.ms.done{border-color:var(--btc);color:var(--btc);background:var(--btc-bg);box-shadow:0 0 10px rgba(247,147,26,0.2)}
+.ms.trophy{border-color:var(--btc);background:var(--btc);color:#000;font-weight:700;box-shadow:0 0 15px rgba(247,147,26,0.6); animation: pulse 2s infinite;}
+@keyframes pulse { 0% {transform: scale(1);} 50% {transform: scale(1.05);} 100% {transform: scale(1);} }
+
+/* ── GRID ── */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px}
+@media(max-width:660px){
+  .grid2{grid-template-columns:1fr}
+  .kpi-row{grid-template-columns:1fr 1fr}
+}
+@media(max-width:400px){.kpi-row{grid-template-columns:1fr}}
+
+/* ── CARD ── */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:22px}
+.card-title{font-size:14px;font-weight:700;margin-bottom:16px}
+
+/* ── FORM ── */
+.field{margin-bottom:13px}
+.field label{display:block;font-size:12px;color:var(--muted);font-weight:500;margin-bottom:5px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.field-hint{font-size:11px;color:var(--muted);margin-top:4px}
+.btn-add{width:100%;padding:12px;background:var(--btc);color:#000;border-radius:var(--rsm);font-weight:700;font-size:14px;margin-top:8px;letter-spacing:.2px;position:relative}
+.btn-add:hover{filter:brightness(1.08);box-shadow:0 4px 18px rgba(247,147,26,.35);transform:translateY(-1px)}
+.btn-add:active{transform:translateY(0)}
+
+/* ── ITENS GERAIS (FALTA E ESTATÍSTICAS) ── */
+.falta-item{display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid var(--border);gap:12px}
+.falta-item:last-child{border:none;padding-bottom:0}
+.falta-label{font-size:13px;color:var(--muted);flex-shrink:0}
+.falta-val, .estat-val{font-family:var(--mono);font-size:14px;font-weight:600;text-align:right;word-break:break-all}
+
+/* ── SHARE BAR ── */
+.share-bar{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px 20px;margin-top:16px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.share-icon{width:34px;height:34px;background:var(--btc-bg);border-radius:var(--rxs);display:grid;place-items:center;color:var(--btc);flex-shrink:0}
+.share-text{flex:1;min-width:160px}
+.share-text strong{font-size:13px;display:block;margin-bottom:2px}
+.share-text span{font-size:12px;color:var(--muted)}
+.share-btns{display:flex;gap:8px;flex-wrap:wrap}
+.btn-exp{padding:8px 14px;background:var(--btc);color:#000;border-radius:var(--rxs);font-size:12px;font-weight:700}
+.btn-exp:hover{filter:brightness(1.1)}
+.btn-imp{padding:8px 14px;border:1px solid var(--border);border-radius:var(--rxs);font-size:12px;color:var(--muted)}
+.btn-imp:hover{background:var(--surface2);color:var(--text)}
+.btn-clr{padding:8px 14px;border:1px solid var(--border);border-radius:var(--rxs);font-size:12px;color:var(--red)}
+.btn-clr:hover{background:var(--red-bg);border-color:var(--red)}
+
+/* ── TABLE CARD ── */
+.tbl-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-top:16px}
+.tbl-head{display:flex;align-items:center;justify-content:space-between;padding:18px 20px 14px;border-bottom:1px solid var(--border)}
+.tbl-title{font-size:14px;font-weight:700}
+.tbl-count{font-size:12px;color:var(--muted);font-family:var(--mono)}
+.tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{width:100%;border-collapse:collapse;min-width:560px}
+th{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;padding:10px 16px;text-align:left;white-space:nowrap;font-weight:500;background:var(--surface2);border-bottom:1px solid var(--border)}
+td{padding:12px 16px;font-size:13px;border-bottom:1px solid var(--border);vertical-align:middle}
+tr:hover td{background:var(--surface2)}
+.pill{display:inline-flex;align-items:center;gap:3px;padding:3px 9px;border-radius:999px;font-family:var(--mono);font-size:12px;font-weight:600}
+.pill-btc{background:var(--btc-bg);color:var(--btc)}
+.td-mono{font-family:var(--mono)}
+.td-muted{color:var(--muted)}
+.del-btn{width:32px;height:32px;border-radius:var(--rxs);border:1px solid var(--border);color:var(--faint);display:grid;place-items:center}
+.del-btn:hover{background:var(--red-bg);border-color:var(--red);color:var(--red)}
+
+/* ── MODAIS E TOAST ── */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.78);backdrop-filter:blur(6px);z-index:200;display:grid;place-items:center;opacity:0;pointer-events:none;transition:opacity .22s}
+.overlay.open{opacity:1;pointer-events:auto}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:28px;width:min(440px,92vw);box-shadow:var(--shadow);transform:scale(.96) translateY(8px);transition:transform .25s}
+.overlay.open .modal{transform:scale(1) translateY(0)}
+.modal h3{font-size:16px;font-weight:700;margin-bottom:8px}
+.modal p{font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:22px}
+.modal-btns{display:flex;gap:10px;justify-content:flex-end}
+.btn-ghost{padding:9px 18px;border:1px solid var(--border);border-radius:var(--rxs);font-size:13px;color:var(--muted)}
+.btn-ghost:hover{background:var(--surface2)}
+.btn-danger{padding:9px 18px;background:var(--red-bg);border:1px solid var(--red);border-radius:var(--rxs);color:var(--red);font-size:13px;font-weight:600}
+.toast{position:fixed;bottom:24px;right:24px;background:var(--surface);border:1.5px solid var(--green);color:var(--green);padding:12px 18px;border-radius:var(--rsm);font-size:13px;font-weight:500;box-shadow:var(--shadow);z-index:500;transform:translateY(120px);opacity:0;transition:transform .4s, opacity .4s}
+.toast.show{transform:translateY(0);opacity:1}
+.toast.err{border-color:var(--red);color:var(--red)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <!-- HEADER -->
+  <header>
+    <div class="brand">
+      <div class="brand-icon">₿</div>
+      <div>
+        <div class="brand-name">Missão 1 BTC</div>
+        <div class="brand-sub" id="save-status">✓ Dados salvos localmente</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="price-pill">
+        <span class="price-dot live" id="price-dot"></span>
+        <span style="color:var(--muted);font-size:11px">BTC/USD</span>
+        <span class="price-num" id="btc-price">carregando…</span>
+        <span class="price-chg" id="btc-chg"></span>
+      </div>
+      <!-- BOTÃO DE PRIVACIDADE -->
+      <button class="icon-btn" id="privacy-btn" onclick="togglePrivacy()" title="Modo Ocultar Valores">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+      </button>
+      <!-- BOTÃO DE TEMA -->
+      <button class="icon-btn" id="theme-btn" onclick="toggleTheme()" title="Alternar tema">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <main>
+    <!-- HERO -->
+    <section class="hero">
+      <div class="hero-top">
+        <div>
+          <div class="hero-label">BTC Acumulado</div>
+          <div class="hero-btc"><span id="h-btc">0.00000000</span> <small>/ 1.00000000 BTC</small></div>
+        </div>
+        <div style="text-align:right">
+          <div class="hero-label">Progresso</div>
+          <div class="hero-pct" id="h-pct">0.0000%</div>
+        </div>
+      </div>
+      <div class="kpi-row">
+        <div class="kpi">
+          <div class="kpi-label">Total Investido</div>
+          <div class="kpi-val btc-color" id="k-inv">R$ 0,00</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">Valor da Posição</div>
+          <div class="kpi-val green" id="k-pos">R$ —</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">P&amp;L</div>
+          <div class="kpi-val" id="k-pnl">R$ —</div>
+        </div>
+      </div>
+      <div class="prog-wrap" id="prog-region">
+        <div class="prog-pct-lbl" id="prog-lbl" style="left:0%">0%</div>
+        <div class="prog-bg">
+          <div class="prog-fill" id="prog-fill" style="width:0%"></div>
+        </div>
+      </div>
+      <div class="milestones" id="milestones"></div>
+    </section>
+
+    <!-- GRID INFERIOR 1 (FORM E FALTA) -->
+    <div class="grid2">
+      <!-- FORM -->
+      <div class="card">
+        <h2 class="card-title">➕ Registrar Aporte</h2>
+        <div class="row2">
+          <div class="field" style="margin:0">
+            <label for="f-brl">Valor pago (R$)</label>
+            <input type="number" id="f-brl" placeholder="500,00" min="0.01" step="0.01" inputmode="decimal">
+          </div>
+          <div class="field" style="margin:0">
+            <label for="f-preco">Preço BTC (R$)</label>
+            <input type="number" id="f-preco" placeholder="Cotação atual" min="1" inputmode="decimal">
+          </div>
+        </div>
+        <div class="field" style="margin-top:13px">
+          <label for="f-btc">Quantidade de BTC</label>
+          <input type="number" id="f-btc" placeholder="0.00000000" step="0.00000001" min="0.00000001" autocomplete="off" inputmode="decimal">
+          <div class="field-hint" style="color:var(--btc)">↑ Calculado automaticamente</div>
+        </div>
+        <div class="field" style="margin-top:13px">
+          <label for="f-nota">Nota <span style="color:var(--faint)">(opcional)</span></label>
+          <input type="text" id="f-nota" placeholder="ex: Binance · compra programada" maxlength="80" autocomplete="off">
+        </div>
+        <button class="btn-add" onclick="addAporte()">＋ Registrar Aporte</button>
+      </div>
+
+      <!-- FALTA -->
+      <div class="card">
+        <h2 class="card-title">🎯 Quanto Falta para 1 BTC</h2>
+        <div class="falta-item">
+          <span class="falta-label">Falta em BTC</span>
+          <span class="falta-val" style="color:var(--btc)" id="fl-btc">1.00000000 BTC</span>
+        </div>
+        <div class="falta-item">
+          <span class="falta-label">Falta em USD</span>
+          <span class="falta-val" id="fl-usd">$ —</span>
+        </div>
+        <div class="falta-item">
+          <span class="falta-label">Falta em BRL</span>
+          <span class="falta-val" id="fl-brl">R$ —</span>
+        </div>
+        <div class="falta-item">
+          <span class="falta-label">Preço médio de entrada</span>
+          <span class="falta-val" id="fl-pm">$ —</span>
+        </div>
+        
+        <!-- PAINEL DE TEMPO (PROJEÇÃO) -->
+        <div class="falta-item" style="flex-direction:column; align-items:flex-start; background: var(--surface2); padding: 12px; border-radius: var(--rsm); margin-top: 10px;">
+          <div style="display:flex; justify-content:space-between; width:100%; align-items:center; margin-bottom: 8px;">
+            <span class="falta-label" style="color: var(--btc); font-weight: 700;">⏳ Tempo Estimado</span>
+            <span class="falta-val" id="fl-time" style="color: var(--btc);">-- meses</span>
+          </div>
+          <div style="display:flex; align-items:center; justify-content: space-between; width:100%;">
+            <span style="font-size: 11px; color: var(--muted);">Meta de aporte mensal (R$):</span>
+            <input type="number" id="f-meta" value="500" placeholder="500" style="padding: 4px 8px; font-size: 12px; width: 90px; text-align:right;">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- GRID INFERIOR 2 (ESTATÍSTICAS E GRÁFICO) -->
+    <div class="grid2">
+        <!-- ESTATÍSTICAS -->
+        <div class="card">
+            <h2 class="card-title">📊 Estatísticas e Histórico</h2>
+            <div class="falta-item">
+              <span class="falta-label">Status do Preço Médio</span>
+              <span class="estat-val" id="est-status" style="font-weight:700;">—</span>
+            </div>
+            <div class="falta-item">
+              <span class="falta-label">Maior Aporte Feito</span>
+              <span class="estat-val" id="est-maior">R$ —</span>
+            </div>
+            <div class="falta-item">
+              <span class="falta-label">Frequência de Compra</span>
+              <span class="estat-val" id="est-freq" style="color:var(--muted)">—</span>
+            </div>
+            <div class="falta-item">
+              <span class="falta-label">Total de Registros</span>
+              <span class="estat-val" id="fl-n" style="color:var(--btc)">0</span>
+            </div>
+        </div>
+
+        <!-- GRÁFICO -->
+        <div class="card">
+            <h2 class="card-title">📈 Curva de Acúmulo (BTC)</h2>
+            <div style="width:100%; height:180px; position:relative;">
+                <canvas id="chartEvolucao"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- EXPORT / IMPORT -->
+    <div class="share-bar">
+      <div class="share-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      </div>
+      <div class="share-text">
+        <strong>Backup dos Dados</strong>
+        <span>Exporte em JSON para backup ou para usar em outro dispositivo</span>
+      </div>
+      <div class="share-btns">
+        <button class="btn-exp" onclick="exportar()">⬇ Exportar</button>
+        <button class="btn-imp" onclick="document.getElementById('file-import').click()">⬆ Importar</button>
+        <input type="file" id="file-import" accept=".json,application/json" style="display:none" onchange="importar(event)">
+        <button class="btn-clr" onclick="confirmarLimpar()">🗑 Limpar</button>
+      </div>
+    </div>
+
+    <!-- TABELA -->
+    <div class="tbl-card">
+      <div class="tbl-head">
+        <h2 class="tbl-title">📋 Histórico de Aportes</h2>
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Data / Hora</th>
+              <th>BTC</th>
+              <th>Pago (BRL)</th>
+              <th>Preço BTC ($)</th>
+              <th>Nota</th>
+              <th class="col-action"></th>
+            </tr>
+          </thead>
+          <tbody id="tbl-body">
+            <tr><td colspan="7"><div class="empty"><div class="empty-ico">₿</div><p>Nenhum aporte ainda.</p></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- MODAIS -->
+<div class="overlay" id="modal-del" onclick="if(event.target===this)closeModal('modal-del')">
+  <div class="modal">
+    <h3>🗑 Excluir aporte?</h3>
+    <p>O registro será removido permanentemente. Essa ação não pode ser desfeita.</p>
+    <div class="modal-btns">
+      <button class="btn-ghost" onclick="closeModal('modal-del')">Cancelar</button>
+      <button class="btn-danger" id="modal-del-confirm">Confirmar</button>
+    </div>
+  </div>
+</div>
+<div class="overlay" id="modal-clr" onclick="if(event.target===this)closeModal('modal-clr')">
+  <div class="modal">
+    <h3>⚠️ Apagar todos os dados?</h3>
+    <p>Isso remove <strong>todos</strong> os aportes salvos permanentemente.</p>
+    <div class="modal-btns">
+      <button class="btn-ghost" onclick="closeModal('modal-clr')">Cancelar</button>
+      <button class="btn-danger" id="modal-clr-confirm">Apagar tudo</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// PWA
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(()=>{});
+}
+
+// ═══════════════════════════════════════════════
+// STORAGE / PYWEBVIEW E VARIAVEIS GLOBAIS
+// ═══════════════════════════════════════════════
+const KEY = 'missao1btc_v2';
+const GOAL_KEY = 'missao1btc_meta';
+let isPyWebView = false;
+let aportes = [];
+let btcUSD  = null;
+let usdBRL  = 5.70;
+let theme   = 'dark';
+let priceRetries = 0;
+let chartInstance = null;
+let privacyMode = localStorage.getItem('privacy_mode') === 'true';
+
+// Inicializa privacidade
+if(privacyMode) {
+    document.body.classList.add('privacy-mode');
+    document.getElementById('privacy-btn').innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
+}
+
+function loadLocal() {
+  try { return JSON.parse(localStorage.getItem(KEY) || '[]'); } catch { return []; }
+}
+
+function save(lista) {
+  if (isPyWebView && window.pywebview) pywebview.api.save_data(lista);
+  else localStorage.setItem(KEY, JSON.stringify(lista));
+  document.getElementById('save-status').textContent = '✓ Salvo às ' + new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+}
+
+window.addEventListener('pywebviewready', function() {
+    isPyWebView = true;
+    pywebview.api.load_data().then(function(data) {
+        if(data && Array.isArray(data) && data.length > 0) aportes = data;
+        else {
+            let localData = loadLocal();
+            if(localData.length > 0) { aportes = localData; pywebview.api.save_data(aportes); }
+        }
+        renderTable(); updateUI();
+    });
+});
+
+setTimeout(() => {
+    if (!isPyWebView) { aportes = loadLocal(); renderTable(); updateUI(); }
+}, 300);
+
+document.addEventListener('DOMContentLoaded', () => {
+    const savedMeta = localStorage.getItem(GOAL_KEY);
+    if(savedMeta) document.getElementById('f-meta').value = savedMeta;
+    document.getElementById('f-meta').addEventListener('input', e => {
+        localStorage.setItem(GOAL_KEY, e.target.value);
+        updateUI();
+    });
+});
+
+// ═══════════════════════════════════════════════
+// FUNÇÕES DE UI E EVENTOS
+// ═══════════════════════════════════════════════
+
+function calcBtc() {
+    let brl = parseFloat(document.getElementById('f-brl').value.replace(',','.'));
+    let preco = parseFloat(document.getElementById('f-preco').value.replace(',','.'));
+    if (!isNaN(brl) && !isNaN(preco) && preco > 0) {
+        document.getElementById('f-btc').value = (brl / preco).toFixed(8);
+    }
+}
+document.getElementById('f-brl').addEventListener('input', calcBtc);
+document.getElementById('f-preco').addEventListener('input', calcBtc);
+
+function toggleTheme() {
+  theme = theme === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', theme);
+  const btn = document.getElementById('theme-btn');
+  if (theme === 'light') btn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>';
+  else btn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
+  if(chartInstance) updateChartColors();
+}
+
+function togglePrivacy() {
+    privacyMode = !privacyMode;
+    localStorage.setItem('privacy_mode', privacyMode);
+    const btn = document.getElementById('privacy-btn');
+    if(privacyMode) {
+        document.body.classList.add('privacy-mode');
+        btn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
+    } else {
+        document.body.classList.remove('privacy-mode');
+        btn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+    }
+}
+
+// ═══════════════════════════════════════════════
+// PREÇO BINANCE
+// ═══════════════════════════════════════════════
+async function fetchPrice() {
+  const dot = document.getElementById('price-dot');
+  try {
+    const r = await fetch('https://api.binance.com/api/v3/ticker/24hr?symbols=%5B%22BTCUSDT%22,%22BTCBRL%22%5D');
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const d = await r.json();
+
+    const usdtData = d.find(x => x.symbol === 'BTCUSDT');
+    const brlData = d.find(x => x.symbol === 'BTCBRL');
+
+    btcUSD = parseFloat(usdtData.lastPrice);
+    const btcBRL = parseFloat(brlData.lastPrice);
+    usdBRL = btcBRL / btcUSD;
+    const chg = parseFloat(usdtData.priceChangePercent);
+    priceRetries = 0;
+
+    document.getElementById('btc-price').textContent = '$ ' + btcUSD.toLocaleString('pt-BR', {maximumFractionDigits:0});
+    const chgEl = document.getElementById('btc-chg');
+    chgEl.textContent = (chg >= 0 ? '+' : '') + chg.toFixed(2) + '%';
+    chgEl.style.color = chg >= 0 ? 'var(--green)' : 'var(--red)';
+    dot.className = 'price-dot live';
+
+    const fp = document.getElementById('f-preco');
+    if (!fp.value && document.activeElement !== fp) {
+        fp.value = btcBRL.toFixed(2);
+        calcBtc();
+    }
+    updateUI();
+  } catch(e) {
+    priceRetries++;
+    dot.className = 'price-dot error';
+    document.getElementById('btc-price').textContent = priceRetries > 2 ? 'offline' : '…';
+    setTimeout(fetchPrice, 30000);
+  }
+}
+
+// ═══════════════════════════════════════════════
+// GRÁFICO (CHART.JS)
+// ═══════════════════════════════════════════════
+function renderChart() {
+    const ctx = document.getElementById('chartEvolucao').getContext('2d');
+    const sorted = [...aportes].reverse(); 
+    
+    let labels = [];
+    let dataBTC = [];
+    let acc = 0;
+    
+    sorted.forEach(a => {
+        acc += Number(a.btc);
+        labels.push(a.data.split(',')[0]); // só a data
+        dataBTC.push(acc);
+    });
+
+    if(chartInstance) chartInstance.destroy();
+    
+    Chart.defaults.color = theme === 'dark' ? '#8a8680' : '#6b6965';
+    Chart.defaults.font.family = "'JetBrains Mono', monospace";
+
+    chartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'BTC Acumulado',
+                data: dataBTC,
+                borderColor: '#F7931A',
+                backgroundColor: 'rgba(247,147,26,0.15)',
+                fill: true,
+                tension: 0.3,
+                pointRadius: 3,
+                pointHoverRadius: 6,
+                pointBackgroundColor: '#F7931A'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { grid: { display: false } },
+                y: { grid: { color: theme === 'dark' ? '#2a2823' : '#ddd9d3' }, beginAtZero: true }
+            }
+        }
+    });
+}
+function updateChartColors() {
+    if(!chartInstance) return;
+    Chart.defaults.color = theme === 'dark' ? '#8a8680' : '#6b6965';
+    chartInstance.options.scales.y.grid.color = theme === 'dark' ? '#2a2823' : '#ddd9d3';
+    chartInstance.update();
+}
+
+// ═══════════════════════════════════════════════
+// CONFETES & GAMIFICAÇÃO
+// ═══════════════════════════════════════════════
+function checkMilestones(totalBTC) {
+    const MS = [0.001, 0.005, 0.01, 0.05, 0.1, 0.21, 0.5, 0.75, 1];
+    let highestReached = 0;
+    MS.forEach(m => { if(totalBTC >= m) highestReached = m; });
+    
+    let savedMS = parseFloat(localStorage.getItem('highest_ms') || '0');
+    
+    if (highestReached > savedMS && highestReached > 0) {
+        if (typeof confetti === 'function') {
+            confetti({ particleCount: 200, spread: 90, origin: { y: 0.5 }, colors: ['#F7931A', '#ffffff', '#6daa45'] });
+            showToast('🎉 Parabéns! Você atingiu a marca de ' + highestReached + ' BTC!', 'success');
+        }
+        localStorage.setItem('highest_ms', highestReached.toString());
+    } else if (totalBTC < savedMS) {
+        localStorage.setItem('highest_ms', highestReached.toString());
+    }
+}
+
+// ═══════════════════════════════════════════════
+// APORTES / UI CORE
+// ═══════════════════════════════════════════════
+function addAporte() {
+  const btcRaw = document.getElementById('f-btc').value.replace(',','.').trim();
+  const brlRaw = document.getElementById('f-brl').value.replace(',','.').trim();
+  const precoRaw = document.getElementById('f-preco').value.replace(',','.').trim();
+  const nota = document.getElementById('f-nota').value.trim();
+
+  if (!btcRaw) return showToast('Informe a quantidade de BTC', 'err');
+  const btc = parseFloat(btcRaw);
+  if (isNaN(btc) || btc <= 0 || btc > 21000000) return showToast('Quantidade de BTC inválida', 'err');
+
+  if (!brlRaw) return showToast('Informe o valor pago em R$', 'err');
+  const brl = parseFloat(brlRaw);
+  if (isNaN(brl) || brl <= 0) return showToast('Valor em R$ inválido', 'err');
+
+  const preco = precoRaw ? parseFloat(precoRaw) : (btcUSD * usdBRL);
+  
+  const aporte = {
+    id: Date.now(), btc, brl, preco,
+    nota: nota.replace(/[<>]/g, '').slice(0, 80),
+    data: new Date().toLocaleString('pt-BR', {dateStyle:'short', timeStyle:'short'})
+  };
+
+  aportes.unshift(aporte);
+  save(aportes);
+  renderTable(); updateUI();
+  showToast('✓ Aporte registrado!');
+  
+  document.getElementById('f-btc').value = '';
+  document.getElementById('f-brl').value = '';
+  document.getElementById('f-nota').value = '';
+  document.getElementById('f-brl').focus();
+}
+
+document.getElementById('f-nota').addEventListener('keydown', e => { if (e.key === 'Enter') addAporte(); });
+
+function renderTable() {
+  const tbody = document.getElementById('tbl-body');
+  if (!aportes.length) {
+    tbody.innerHTML = '<tr><td colspan="7"><div class="empty"><div class="empty-ico">₿</div><p>Nenhum aporte ainda.</p></div></td></tr>';
+    return;
+  }
+  const frag = document.createDocumentFragment();
+  aportes.forEach((a, i) => {
+    const tr = document.createElement('tr');
+    const nota = (a.nota || '—').replace(/&/g,'&amp;').replace(/</g,'&lt;');
+    const pDolar = a.preco && usdBRL ? a.preco/usdBRL : 0; // if preco was saved in BRL, show approx in USD
+    // We saved preco in BRL from now on, so let's just display it in BRL on the table or keep it as $ if it was old.
+    // Let's assume Preco is BRL
+    tr.innerHTML = `
+      <td class="td-muted" style="font-size:12px">${i + 1}</td>
+      <td class="td-muted" style="font-size:12px;white-space:nowrap">${a.data}</td>
+      <td><span class="pill pill-btc">₿ ${Number(a.btc).toFixed(8)}</span></td>
+      <td class="td-mono" style="color:var(--btc)">R$&nbsp;${Number(a.brl).toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>
+      <td class="td-mono td-muted">R$&nbsp;${Number(a.preco||0).toLocaleString('pt-BR',{maximumFractionDigits:0})}</td>
+      <td class="td-muted" style="font-size:12px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${nota}">${nota}</td>
+      <td>
+        <button class="del-btn" data-id="${a.id}" title="Excluir"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg></button>
+      </td>`;
+    frag.appendChild(tr);
+  });
+  tbody.innerHTML = '';
+  tbody.appendChild(frag);
+  tbody.onclick = e => { const btn = e.target.closest('.del-btn'); if (btn) askDelete(Number(btn.dataset.id)); };
+}
+
+function updateUI() {
+  const totalBTC = aportes.reduce((s, a) => s + Number(a.btc), 0);
+  const totalBRL = aportes.reduce((s, a) => s + Number(a.brl), 0);
+  const pct = Math.min(totalBTC, 1) * 100;
+  const faltaBTC = Math.max(0, 1 - totalBTC);
+
+  document.getElementById('h-btc').textContent = totalBTC.toFixed(8);
+  document.getElementById('h-pct').textContent = pct.toFixed(4) + '%';
+  document.getElementById('k-inv').textContent = 'R$ ' + totalBRL.toLocaleString('pt-BR',{minimumFractionDigits:2});
+  document.getElementById('fl-btc').textContent = faltaBTC.toFixed(8) + ' BTC';
+  document.getElementById('fl-n').textContent = aportes.length;
+
+  const fill = document.getElementById('prog-fill');
+  fill.style.width = pct.toFixed(4) + '%';
+  fill.className = 'prog-fill' + (pct > 0 ? ' has-value' : '');
+  const lbl = document.getElementById('prog-lbl');
+  lbl.textContent = pct.toFixed(2) + '%';
+  lbl.style.left = Math.max(2, Math.min(pct, 98)) + '%';
+
+  const pm = totalBTC > 0 && usdBRL > 0 ? totalBRL / totalBTC / usdBRL : 0;
+  document.getElementById('fl-pm').textContent = totalBTC > 0 ? '$ ' + pm.toLocaleString('pt-BR',{maximumFractionDigits:0}) : '$ —';
+
+  // ESTATISTICAS E PREÇO MEDIO
+  const maxAporte = aportes.reduce((max, a) => Math.max(max, Number(a.brl)), 0);
+  document.getElementById('est-maior').textContent = maxAporte > 0 ? 'R$ ' + maxAporte.toLocaleString('pt-BR',{minimumFractionDigits:2}) : 'R$ —';
+
+  if(aportes.length > 1) {
+      const partsN = aportes[0].data.split(',')[0].split('/');
+      const partsO = aportes[aportes.length-1].data.split(',')[0].split('/');
+      const diffDays = Math.ceil(Math.abs(new Date(partsN[2], partsN[1]-1, partsN[0]) - new Date(partsO[2], partsO[1]-1, partsO[0])) / 86400000);
+      if(diffDays === 0) document.getElementById('est-freq').textContent = "Vários no mesmo dia";
+      else document.getElementById('est-freq').textContent = `1 a cada ${Math.max(1, Math.round(diffDays/(aportes.length-1)))} dias`;
+  } else {
+      document.getElementById('est-freq').textContent = "—";
+  }
+
+  if (btcUSD && usdBRL) {
+    const pos = totalBTC * btcUSD * usdBRL;
+    const pnl = pos - totalBRL;
+    const fUSD = faltaBTC * btcUSD;
+    const fBRL = faltaBTC * btcUSD * usdBRL;
+
+    document.getElementById('k-pos').textContent = 'R$ ' + pos.toLocaleString('pt-BR',{minimumFractionDigits:2});
+    document.getElementById('fl-usd').textContent = '$ ' + fUSD.toLocaleString('pt-BR',{maximumFractionDigits:0});
+    document.getElementById('fl-brl').textContent = 'R$ ' + fBRL.toLocaleString('pt-BR',{maximumFractionDigits:0});
+
+    const pnlEl = document.getElementById('k-pnl');
+    pnlEl.textContent = (pnl >= 0 ? '+' : '−') + 'R$ ' + Math.abs(pnl).toLocaleString('pt-BR',{minimumFractionDigits:2});
+    pnlEl.style.color = pnl >= 0 ? 'var(--green)' : 'var(--red)';
+
+    const stEl = document.getElementById('est-status');
+    if (pm > 0) {
+        const diff = ((btcUSD - pm) / pm) * 100;
+        stEl.textContent = (diff >= 0 ? 'Lucro de +' : 'Prejuízo de ') + diff.toFixed(2) + '%';
+        stEl.style.color = diff >= 0 ? 'var(--green)' : 'var(--red)';
+    } else stEl.textContent = '—';
+
+    // Tempo Estimado
+    const metaStr = document.getElementById('f-meta').value.replace(',','.');
+    if (parseFloat(metaStr) > 0 && faltaBTC > 0) {
+        const meses = fBRL / parseFloat(metaStr);
+        const anos = Math.floor(meses / 12);
+        const mesesRestantes = Math.ceil(meses % 12);
+        let tempo = anos > 0 ? `${anos} ano${anos>1?'s':''}` + (mesesRestantes > 0 ? ` e ${mesesRestantes} mês${mesesRestantes>1?'es':''}` : '') : `${Math.ceil(meses)} mês${Math.ceil(meses)>1?'es':''}`;
+        document.getElementById('fl-time').textContent = tempo;
+    } else {
+        document.getElementById('fl-time').textContent = faltaBTC === 0 ? "Missão Cumprida! 🎉" : "--";
+    }
+  }
+
+  const MS = [{v:.001,l:'0.001'},{v:.005,l:'0.005'},{v:.01,l:'0.01'},{v:.05,l:'0.05'},{v:.1,l:'0.10'},{v:.21,l:'0.21'},{v:.5,l:'0.50'},{v:.75,l:'0.75'},{v:1,l:'🏆 1 BTC'}];
+  document.getElementById('milestones').innerHTML = MS.map(m => {
+    const done = totalBTC >= m.v;
+    return `<div class="ms${done ? (m.v===1?' trophy':' done') : ''}">${m.l}</div>`;
+  }).join('');
+
+  renderChart();
+  checkMilestones(totalBTC);
+}
+
+// RESTANTE DAS FUNÇÕES (MODAL, EXPORTAR, ETC)
+function askDelete(id) { openModal('modal-del'); document.getElementById('modal-del-confirm').onclick = () => { aportes = aportes.filter(a => a.id !== id); save(aportes); renderTable(); updateUI(); showToast('Removido'); closeModal('modal-del'); }; }
+function confirmarLimpar() { if(!aportes.length)return; openModal('modal-clr'); document.getElementById('modal-clr-confirm').onclick = () => { aportes=[]; save(aportes); renderTable(); updateUI(); showToast('Tudo limpo'); closeModal('modal-clr'); }; }
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+let _toastTimer; function showToast(msg, type='') { const el = document.getElementById('toast'); el.textContent = msg; el.className = 'toast'+(type?' '+type:''); clearTimeout(_toastTimer); requestAnimationFrame(()=>requestAnimationFrame(()=>el.classList.add('show'))); _toastTimer = setTimeout(()=>el.classList.remove('show'), 3600); }
+function exportar() { if(!aportes.length)return; const blob = new Blob([JSON.stringify({versao:2, aportes},null,2)], {type:'application/json'}); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'missao1btc.json'; a.click(); showToast('Exportado!'); }
+function importar(evt) { const f=evt.target.files[0]; if(!f)return; const r=new FileReader(); r.onload=e=>{ try{ const raw=JSON.parse(e.target.result); const list=Array.isArray(raw)?raw:(raw.aportes||[]); const valid=list.filter(a=>a.btc&&a.brl); if(!valid.length) throw new Error(); aportes=valid; save(aportes); renderTable(); updateUI(); showToast('Importado!'); }catch{ showToast('Erro na importação','err'); } evt.target.value=''; }; r.readAsText(f); }
+
+fetchPrice(); setInterval(fetchPrice, 60000);
+</script>
+</body>
+</html>
