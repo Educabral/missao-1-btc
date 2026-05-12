@@ -13,7 +13,7 @@
 <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 
-<!-- SCRIPTS EXTERNOS (GRÁFICO E CONFETES) -->
+<!-- SCRIPTS EXTERNOS -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
@@ -50,6 +50,8 @@ input::placeholder{color:var(--faint)}
 input[type=number]{-moz-appearance:textfield}
 input[type=number]::-webkit-inner-spin-button,
 input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none}
+input[type=datetime-local]::-webkit-calendar-picker-indicator { filter: invert(var(--invert-date, 1)); cursor: pointer; }
+[data-theme="light"] { --invert-date: 0; }
 
 /* ── MODO PRIVACIDADE ── */
 body.privacy-mode .kpi-val,
@@ -86,7 +88,7 @@ header{display:flex;align-items:center;justify-content:space-between;padding:20p
 .price-num{font-family:var(--mono);font-weight:600;color:var(--btc)}
 .price-chg{font-size:11px;font-family:var(--mono)}
 
-/* Botão de tema e privacidade */
+/* Botão de ícones */
 .icon-btn{width:36px;height:36px;border-radius:var(--rxs);border:1px solid var(--border);display:grid;place-items:center;color:var(--muted)}
 .icon-btn:hover{background:var(--surface2);color:var(--text)}
 .icon-btn:focus-visible{outline:2px solid var(--btc);outline-offset:2px}
@@ -142,6 +144,8 @@ header{display:flex;align-items:center;justify-content:space-between;padding:20p
 .btn-add{width:100%;padding:12px;background:var(--btc);color:#000;border-radius:var(--rsm);font-weight:700;font-size:14px;margin-top:8px;letter-spacing:.2px;position:relative}
 .btn-add:hover{filter:brightness(1.08);box-shadow:0 4px 18px rgba(247,147,26,.35);transform:translateY(-1px)}
 .btn-add:active{transform:translateY(0)}
+.btn-ghost-form{width:100%;padding:12px;background:transparent;color:var(--text);border:1px solid var(--border);border-radius:var(--rsm);font-weight:600;font-size:14px;margin-top:8px;transition:0.2s}
+.btn-ghost-form:hover{background:var(--surface2)}
 
 /* ── ITENS GERAIS (FALTA E ESTATÍSTICAS) ── */
 .falta-item{display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid var(--border);gap:12px}
@@ -169,7 +173,7 @@ header{display:flex;align-items:center;justify-content:space-between;padding:20p
 .tbl-title{font-size:14px;font-weight:700}
 .tbl-count{font-size:12px;color:var(--muted);font-family:var(--mono)}
 .tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
-table{width:100%;border-collapse:collapse;min-width:560px}
+table{width:100%;border-collapse:collapse;min-width:620px}
 th{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;padding:10px 16px;text-align:left;white-space:nowrap;font-weight:500;background:var(--surface2);border-bottom:1px solid var(--border)}
 td{padding:12px 16px;font-size:13px;border-bottom:1px solid var(--border);vertical-align:middle}
 tr:hover td{background:var(--surface2)}
@@ -177,7 +181,10 @@ tr:hover td{background:var(--surface2)}
 .pill-btc{background:var(--btc-bg);color:var(--btc)}
 .td-mono{font-family:var(--mono)}
 .td-muted{color:var(--muted)}
-.del-btn{width:32px;height:32px;border-radius:var(--rxs);border:1px solid var(--border);color:var(--faint);display:grid;place-items:center}
+
+.action-btns {display:flex; gap:4px; align-items:center;}
+.edit-btn, .del-btn{width:28px;height:28px;border-radius:var(--rxs);border:1px solid var(--border);color:var(--faint);display:grid;place-items:center}
+.edit-btn:hover{background:var(--surface2);border-color:var(--text);color:var(--text)}
 .del-btn:hover{background:var(--red-bg);border-color:var(--red);color:var(--red)}
 
 /* ── MODAIS E TOAST ── */
@@ -214,6 +221,8 @@ tr:hover td{background:var(--surface2)}
         <span class="price-num" id="btc-price">carregando…</span>
         <span class="price-chg" id="btc-chg"></span>
       </div>
+      <!-- BOTÃO DE MOEDA -->
+      <button class="icon-btn" id="currency-btn" onclick="toggleCurrency()" title="Alternar Moeda (BRL/USD)" style="font-size:13px; font-weight:700; font-family:var(--mono);">R$</button>
       <!-- BOTÃO DE PRIVACIDADE -->
       <button class="icon-btn" id="privacy-btn" onclick="togglePrivacy()" title="Modo Ocultar Valores">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
@@ -268,24 +277,33 @@ tr:hover td{background:var(--surface2)}
         <h2 class="card-title">➕ Registrar Aporte</h2>
         <div class="row2">
           <div class="field" style="margin:0">
-            <label for="f-brl">Valor pago (R$)</label>
+            <label for="f-brl" id="lbl-brl">Valor pago (R$)</label>
             <input type="number" id="f-brl" placeholder="500,00" min="0.01" step="0.01" inputmode="decimal">
           </div>
           <div class="field" style="margin:0">
-            <label for="f-preco">Preço BTC (R$)</label>
+            <label for="f-preco" id="lbl-preco">Preço BTC (R$)</label>
             <input type="number" id="f-preco" placeholder="Cotação atual" min="1" inputmode="decimal">
           </div>
         </div>
-        <div class="field" style="margin-top:13px">
-          <label for="f-btc">Quantidade de BTC</label>
-          <input type="number" id="f-btc" placeholder="0.00000000" step="0.00000001" min="0.00000001" autocomplete="off" inputmode="decimal">
-          <div class="field-hint" style="color:var(--btc)">↑ Calculado automaticamente</div>
+        
+        <div class="row2" style="margin-top:13px">
+          <div class="field" style="margin:0">
+            <label for="f-btc">Quantidade de BTC</label>
+            <input type="number" id="f-btc" placeholder="0.00000000" step="0.00000001" min="0.00000001" autocomplete="off" inputmode="decimal">
+            <div class="field-hint" style="color:var(--btc)">↑ Calculado auto</div>
+          </div>
+          <div class="field" style="margin:0">
+            <label for="f-data">Data do Aporte</label>
+            <input type="datetime-local" id="f-data">
+          </div>
         </div>
+
         <div class="field" style="margin-top:13px">
           <label for="f-nota">Nota <span style="color:var(--faint)">(opcional)</span></label>
           <input type="text" id="f-nota" placeholder="ex: Binance · compra programada" maxlength="80" autocomplete="off">
         </div>
-        <button class="btn-add" onclick="addAporte()">＋ Registrar Aporte</button>
+        <button class="btn-add" id="btn-registrar" onclick="addAporte()">＋ Registrar Aporte</button>
+        <button class="btn-ghost-form" id="btn-cancelar" onclick="cancelEdit()" style="display:none;">Cancelar Edição</button>
       </div>
 
       <!-- FALTA -->
@@ -315,7 +333,7 @@ tr:hover td{background:var(--surface2)}
             <span class="falta-val" id="fl-time" style="color: var(--btc);">-- meses</span>
           </div>
           <div style="display:flex; align-items:center; justify-content: space-between; width:100%;">
-            <span style="font-size: 11px; color: var(--muted);">Meta de aporte mensal (R$):</span>
+            <span style="font-size: 11px; color: var(--muted);" id="lbl-meta">Meta mensal (R$):</span>
             <input type="number" id="f-meta" value="500" placeholder="500" style="padding: 4px 8px; font-size: 12px; width: 90px; text-align:right;">
           </div>
         </div>
@@ -336,7 +354,7 @@ tr:hover td{background:var(--surface2)}
               <span class="estat-val" id="est-maior">R$ —</span>
             </div>
             <div class="falta-item">
-              <span class="falta-label">Frequência de Compra</span>
+              <span class="falta-label">Frequência Média</span>
               <span class="estat-val" id="est-freq" style="color:var(--muted)">—</span>
             </div>
             <div class="falta-item">
@@ -383,8 +401,8 @@ tr:hover td{background:var(--surface2)}
               <th>#</th>
               <th>Data / Hora</th>
               <th>BTC</th>
-              <th>Pago (BRL)</th>
-              <th>Preço BTC ($)</th>
+              <th id="th-pago">Pago (BRL)</th>
+              <th id="th-preco">Preço BTC</th>
               <th>Nota</th>
               <th class="col-action"></th>
             </tr>
@@ -429,7 +447,7 @@ if ('serviceWorker' in navigator) {
 }
 
 // ═══════════════════════════════════════════════
-// STORAGE / PYWEBVIEW E VARIAVEIS GLOBAIS
+// GLOBAIS E STORAGE
 // ═══════════════════════════════════════════════
 const KEY = 'missao1btc_v2';
 const GOAL_KEY = 'missao1btc_meta';
@@ -440,18 +458,19 @@ let usdBRL  = 5.70;
 let theme   = 'dark';
 let priceRetries = 0;
 let chartInstance = null;
-let privacyMode = localStorage.getItem('privacy_mode') === 'true';
+let editId = null;
 
-// Inicializa privacidade
+let privacyMode = localStorage.getItem('privacy_mode') === 'true';
+let currencyMode = localStorage.getItem('currency_mode') || 'BRL';
+
 if(privacyMode) {
     document.body.classList.add('privacy-mode');
     document.getElementById('privacy-btn').innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
 }
+document.getElementById('currency-btn').textContent = currencyMode === 'BRL' ? 'R$' : '$';
+updateCurrencyLabels();
 
-function loadLocal() {
-  try { return JSON.parse(localStorage.getItem(KEY) || '[]'); } catch { return []; }
-}
-
+function loadLocal() { try { return JSON.parse(localStorage.getItem(KEY) || '[]'); } catch { return []; } }
 function save(lista) {
   if (isPyWebView && window.pywebview) pywebview.api.save_data(lista);
   else localStorage.setItem(KEY, JSON.stringify(lista));
@@ -469,23 +488,25 @@ window.addEventListener('pywebviewready', function() {
         renderTable(); updateUI();
     });
 });
-
-setTimeout(() => {
-    if (!isPyWebView) { aportes = loadLocal(); renderTable(); updateUI(); }
-}, 300);
+setTimeout(() => { if (!isPyWebView) { aportes = loadLocal(); renderTable(); updateUI(); } }, 300);
 
 document.addEventListener('DOMContentLoaded', () => {
     const savedMeta = localStorage.getItem(GOAL_KEY);
     if(savedMeta) document.getElementById('f-meta').value = savedMeta;
     document.getElementById('f-meta').addEventListener('input', e => {
-        localStorage.setItem(GOAL_KEY, e.target.value);
-        updateUI();
+        localStorage.setItem(GOAL_KEY, e.target.value); updateUI();
     });
+    setDefaultDate();
 });
 
 // ═══════════════════════════════════════════════
-// FUNÇÕES DE UI E EVENTOS
+// UI ACTIONS (TOGGLES E DATAS)
 // ═══════════════════════════════════════════════
+function setDefaultDate() {
+    const now = new Date();
+    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+    document.getElementById('f-data').value = now.toISOString().slice(0,16);
+}
 
 function calcBtc() {
     let brl = parseFloat(document.getElementById('f-brl').value.replace(',','.'));
@@ -519,8 +540,37 @@ function togglePrivacy() {
     }
 }
 
+function toggleCurrency() {
+    currencyMode = currencyMode === 'BRL' ? 'USD' : 'BRL';
+    localStorage.setItem('currency_mode', currencyMode);
+    document.getElementById('currency-btn').textContent = currencyMode === 'BRL' ? 'R$' : '$';
+    updateCurrencyLabels();
+    updateUI(); renderTable();
+    
+    // Atualiza o form vazio para o preco na moeda nova
+    if(!editId) {
+        const fp = document.getElementById('f-preco');
+        fp.value = (currencyMode === 'BRL' ? (btcUSD * usdBRL) : btcUSD).toFixed(2);
+        calcBtc();
+    }
+}
+
+function updateCurrencyLabels() {
+    document.getElementById('lbl-brl').textContent = currencyMode === 'BRL' ? 'Valor pago (R$)' : 'Valor pago (USD)';
+    document.getElementById('lbl-preco').textContent = currencyMode === 'BRL' ? 'Preço BTC (R$)' : 'Preço BTC (USD)';
+    document.getElementById('lbl-meta').textContent = currencyMode === 'BRL' ? 'Meta mensal (R$):' : 'Meta mensal (USD):';
+    document.getElementById('th-pago').textContent = currencyMode === 'BRL' ? 'Pago (BRL)' : 'Pago (USD)';
+}
+
+function formatMoney(valBRL, minDec = 2, maxDec = 2) {
+    if(currencyMode === 'USD' && usdBRL > 0) {
+        return '$ ' + (valBRL / usdBRL).toLocaleString('en-US', {minimumFractionDigits: minDec, maximumFractionDigits: maxDec});
+    }
+    return 'R$ ' + valBRL.toLocaleString('pt-BR', {minimumFractionDigits: minDec, maximumFractionDigits: maxDec});
+}
+
 // ═══════════════════════════════════════════════
-// PREÇO BINANCE
+// PREÇO BINANCE E GRÁFICO
 // ═══════════════════════════════════════════════
 async function fetchPrice() {
   const dot = document.getElementById('price-dot');
@@ -545,11 +595,11 @@ async function fetchPrice() {
     dot.className = 'price-dot live';
 
     const fp = document.getElementById('f-preco');
-    if (!fp.value && document.activeElement !== fp) {
-        fp.value = btcBRL.toFixed(2);
+    if (!fp.value && document.activeElement !== fp && !editId) {
+        fp.value = (currencyMode === 'BRL' ? btcBRL : btcUSD).toFixed(2);
         calcBtc();
     }
-    updateUI();
+    updateUI(); renderTable();
   } catch(e) {
     priceRetries++;
     dot.className = 'price-dot error';
@@ -558,17 +608,11 @@ async function fetchPrice() {
   }
 }
 
-// ═══════════════════════════════════════════════
-// GRÁFICO (CHART.JS)
-// ═══════════════════════════════════════════════
 function renderChart() {
     const ctx = document.getElementById('chartEvolucao').getContext('2d');
-    const sorted = [...aportes].reverse(); 
+    const sorted = [...aportes].sort((a,b) => new Date(a.dataIso || 0) - new Date(b.dataIso || 0)); 
     
-    let labels = [];
-    let dataBTC = [];
-    let acc = 0;
-    
+    let labels = [], dataBTC = [], acc = 0;
     sorted.forEach(a => {
         acc += Number(a.btc);
         labels.push(a.data.split(',')[0]); // só a data
@@ -576,7 +620,6 @@ function renderChart() {
     });
 
     if(chartInstance) chartInstance.destroy();
-    
     Chart.defaults.color = theme === 'dark' ? '#8a8680' : '#6b6965';
     Chart.defaults.font.family = "'JetBrains Mono', monospace";
 
@@ -584,26 +627,11 @@ function renderChart() {
         type: 'line',
         data: {
             labels: labels,
-            datasets: [{
-                label: 'BTC Acumulado',
-                data: dataBTC,
-                borderColor: '#F7931A',
-                backgroundColor: 'rgba(247,147,26,0.15)',
-                fill: true,
-                tension: 0.3,
-                pointRadius: 3,
-                pointHoverRadius: 6,
-                pointBackgroundColor: '#F7931A'
-            }]
+            datasets: [{ label: 'BTC Acumulado', data: dataBTC, borderColor: '#F7931A', backgroundColor: 'rgba(247,147,26,0.15)', fill: true, tension: 0.3, pointRadius: 3, pointBackgroundColor: '#F7931A' }]
         },
         options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
-            scales: {
-                x: { grid: { display: false } },
-                y: { grid: { color: theme === 'dark' ? '#2a2823' : '#ddd9d3' }, beginAtZero: true }
-            }
+            responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+            scales: { x: { grid: { display: false } }, y: { grid: { color: theme === 'dark' ? '#2a2823' : '#ddd9d3' }, beginAtZero: true } }
         }
     });
 }
@@ -615,60 +643,97 @@ function updateChartColors() {
 }
 
 // ═══════════════════════════════════════════════
-// CONFETES & GAMIFICAÇÃO
-// ═══════════════════════════════════════════════
-function checkMilestones(totalBTC) {
-    const MS = [0.001, 0.005, 0.01, 0.05, 0.1, 0.21, 0.5, 0.75, 1];
-    let highestReached = 0;
-    MS.forEach(m => { if(totalBTC >= m) highestReached = m; });
-    
-    let savedMS = parseFloat(localStorage.getItem('highest_ms') || '0');
-    
-    if (highestReached > savedMS && highestReached > 0) {
-        if (typeof confetti === 'function') {
-            confetti({ particleCount: 200, spread: 90, origin: { y: 0.5 }, colors: ['#F7931A', '#ffffff', '#6daa45'] });
-            showToast('🎉 Parabéns! Você atingiu a marca de ' + highestReached + ' BTC!', 'success');
-        }
-        localStorage.setItem('highest_ms', highestReached.toString());
-    } else if (totalBTC < savedMS) {
-        localStorage.setItem('highest_ms', highestReached.toString());
-    }
-}
-
-// ═══════════════════════════════════════════════
-// APORTES / UI CORE
+// CRUD APORTES E UI CORE
 // ═══════════════════════════════════════════════
 function addAporte() {
   const btcRaw = document.getElementById('f-btc').value.replace(',','.').trim();
   const brlRaw = document.getElementById('f-brl').value.replace(',','.').trim();
   const precoRaw = document.getElementById('f-preco').value.replace(',','.').trim();
   const nota = document.getElementById('f-nota').value.trim();
+  const dataVal = document.getElementById('f-data').value;
 
   if (!btcRaw) return showToast('Informe a quantidade de BTC', 'err');
   const btc = parseFloat(btcRaw);
-  if (isNaN(btc) || btc <= 0 || btc > 21000000) return showToast('Quantidade de BTC inválida', 'err');
+  if (isNaN(btc) || btc <= 0 || btc > 21000000) return showToast('Quantidade inválida', 'err');
 
-  if (!brlRaw) return showToast('Informe o valor pago em R$', 'err');
-  const brl = parseFloat(brlRaw);
-  if (isNaN(brl) || brl <= 0) return showToast('Valor em R$ inválido', 'err');
+  if (!brlRaw) return showToast('Informe o valor pago', 'err');
+  let valPago = parseFloat(brlRaw);
+  if (isNaN(valPago) || valPago <= 0) return showToast('Valor pago inválido', 'err');
 
-  const preco = precoRaw ? parseFloat(precoRaw) : (btcUSD * usdBRL);
+  let valPreco = precoRaw ? parseFloat(precoRaw) : (currencyMode === 'BRL' ? btcUSD * usdBRL : btcUSD);
+  
+  // Converte para BRL interno se a pessoa digitou em USD
+  if (currencyMode === 'USD' && usdBRL > 0) {
+      valPago = valPago * usdBRL;
+      valPreco = valPreco * usdBRL;
+  }
+
+  const dObj = dataVal ? new Date(dataVal) : new Date();
   
   const aporte = {
-    id: Date.now(), btc, brl, preco,
+    id: editId || Date.now(), btc, brl: valPago, preco: valPreco,
     nota: nota.replace(/[<>]/g, '').slice(0, 80),
-    data: new Date().toLocaleString('pt-BR', {dateStyle:'short', timeStyle:'short'})
+    data: dObj.toLocaleString('pt-BR', {dateStyle:'short', timeStyle:'short'}),
+    dataIso: dObj.toISOString()
   };
 
-  aportes.unshift(aporte);
-  save(aportes);
-  renderTable(); updateUI();
-  showToast('✓ Aporte registrado!');
-  
-  document.getElementById('f-btc').value = '';
-  document.getElementById('f-brl').value = '';
-  document.getElementById('f-nota').value = '';
-  document.getElementById('f-brl').focus();
+  if(editId) {
+      const idx = aportes.findIndex(x => x.id === editId);
+      if(idx !== -1) aportes[idx] = aporte;
+      cancelEdit();
+      showToast('✓ Aporte atualizado!');
+  } else {
+      aportes.push(aporte);
+      showToast('✓ Aporte registrado!');
+      document.getElementById('f-btc').value = '';
+      document.getElementById('f-brl').value = '';
+      document.getElementById('f-nota').value = '';
+      setDefaultDate();
+      document.getElementById('f-brl').focus();
+  }
+
+  // Ordena por data (mais recente primeiro)
+  aportes.sort((a,b) => new Date(b.dataIso || b.id) - new Date(a.dataIso || a.id));
+
+  save(aportes); renderTable(); updateUI();
+}
+
+function editAporte(id) {
+    const a = aportes.find(x => x.id === id);
+    if(!a) return;
+    
+    let vPago = a.brl;
+    let vPreco = a.preco || (btcUSD * usdBRL);
+    if(currencyMode === 'USD' && usdBRL > 0) {
+        vPago = vPago / usdBRL;
+        vPreco = vPreco / usdBRL;
+    }
+    
+    document.getElementById('f-brl').value = vPago.toFixed(2);
+    document.getElementById('f-preco').value = vPreco.toFixed(2);
+    document.getElementById('f-btc').value = a.btc;
+    document.getElementById('f-nota').value = a.nota || '';
+    
+    if(a.dataIso) {
+        const d = new Date(a.dataIso);
+        d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+        document.getElementById('f-data').value = d.toISOString().slice(0,16);
+    }
+    
+    editId = id;
+    document.getElementById('btn-registrar').textContent = "💾 Salvar Alterações";
+    document.getElementById('btn-cancelar').style.display = 'block';
+    window.scrollTo({top: 0, behavior: 'smooth'});
+}
+
+function cancelEdit() {
+    editId = null;
+    document.getElementById('btn-registrar').textContent = "＋ Registrar Aporte";
+    document.getElementById('btn-cancelar').style.display = 'none';
+    document.getElementById('f-btc').value = '';
+    document.getElementById('f-brl').value = '';
+    document.getElementById('f-nota').value = '';
+    setDefaultDate();
 }
 
 document.getElementById('f-nota').addEventListener('keydown', e => { if (e.key === 'Enter') addAporte(); });
@@ -683,24 +748,27 @@ function renderTable() {
   aportes.forEach((a, i) => {
     const tr = document.createElement('tr');
     const nota = (a.nota || '—').replace(/&/g,'&amp;').replace(/</g,'&lt;');
-    const pDolar = a.preco && usdBRL ? a.preco/usdBRL : 0; // if preco was saved in BRL, show approx in USD
-    // We saved preco in BRL from now on, so let's just display it in BRL on the table or keep it as $ if it was old.
-    // Let's assume Preco is BRL
+    
     tr.innerHTML = `
       <td class="td-muted" style="font-size:12px">${i + 1}</td>
       <td class="td-muted" style="font-size:12px;white-space:nowrap">${a.data}</td>
       <td><span class="pill pill-btc">₿ ${Number(a.btc).toFixed(8)}</span></td>
-      <td class="td-mono" style="color:var(--btc)">R$&nbsp;${Number(a.brl).toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>
-      <td class="td-mono td-muted">R$&nbsp;${Number(a.preco||0).toLocaleString('pt-BR',{maximumFractionDigits:0})}</td>
-      <td class="td-muted" style="font-size:12px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${nota}">${nota}</td>
+      <td class="td-mono" style="color:var(--btc)">${formatMoney(Number(a.brl))}</td>
+      <td class="td-mono td-muted">${formatMoney(Number(a.preco||0), 0, 0)}</td>
+      <td class="td-muted" style="font-size:12px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${nota}">${nota}</td>
       <td>
-        <button class="del-btn" data-id="${a.id}" title="Excluir"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg></button>
+        <div class="action-btns">
+            <button class="edit-btn" data-id="${a.id}" title="Editar"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></button>
+            <button class="del-btn" data-id="${a.id}" title="Excluir"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg></button>
+        </div>
       </td>`;
     frag.appendChild(tr);
   });
   tbody.innerHTML = '';
   tbody.appendChild(frag);
-  tbody.onclick = e => { const btn = e.target.closest('.del-btn'); if (btn) askDelete(Number(btn.dataset.id)); };
+  
+  tbody.querySelectorAll('.del-btn').forEach(btn => btn.onclick = () => askDelete(Number(btn.dataset.id)));
+  tbody.querySelectorAll('.edit-btn').forEach(btn => btn.onclick = () => editAporte(Number(btn.dataset.id)));
 }
 
 function updateUI() {
@@ -711,7 +779,7 @@ function updateUI() {
 
   document.getElementById('h-btc').textContent = totalBTC.toFixed(8);
   document.getElementById('h-pct').textContent = pct.toFixed(4) + '%';
-  document.getElementById('k-inv').textContent = 'R$ ' + totalBRL.toLocaleString('pt-BR',{minimumFractionDigits:2});
+  document.getElementById('k-inv').textContent = formatMoney(totalBRL);
   document.getElementById('fl-btc').textContent = faltaBTC.toFixed(8) + ' BTC';
   document.getElementById('fl-n').textContent = aportes.length;
 
@@ -725,32 +793,28 @@ function updateUI() {
   const pm = totalBTC > 0 && usdBRL > 0 ? totalBRL / totalBTC / usdBRL : 0;
   document.getElementById('fl-pm').textContent = totalBTC > 0 ? '$ ' + pm.toLocaleString('pt-BR',{maximumFractionDigits:0}) : '$ —';
 
-  // ESTATISTICAS E PREÇO MEDIO
   const maxAporte = aportes.reduce((max, a) => Math.max(max, Number(a.brl)), 0);
-  document.getElementById('est-maior').textContent = maxAporte > 0 ? 'R$ ' + maxAporte.toLocaleString('pt-BR',{minimumFractionDigits:2}) : 'R$ —';
+  document.getElementById('est-maior').textContent = maxAporte > 0 ? formatMoney(maxAporte) : '—';
 
   if(aportes.length > 1) {
-      const partsN = aportes[0].data.split(',')[0].split('/');
-      const partsO = aportes[aportes.length-1].data.split(',')[0].split('/');
-      const diffDays = Math.ceil(Math.abs(new Date(partsN[2], partsN[1]-1, partsN[0]) - new Date(partsO[2], partsO[1]-1, partsO[0])) / 86400000);
+      const oldA = aportes[aportes.length-1];
+      const newA = aportes[0];
+      const diffDays = Math.ceil(Math.abs(new Date(newA.dataIso || newA.id) - new Date(oldA.dataIso || oldA.id)) / 86400000);
       if(diffDays === 0) document.getElementById('est-freq').textContent = "Vários no mesmo dia";
       else document.getElementById('est-freq').textContent = `1 a cada ${Math.max(1, Math.round(diffDays/(aportes.length-1)))} dias`;
-  } else {
-      document.getElementById('est-freq').textContent = "—";
-  }
+  } else document.getElementById('est-freq').textContent = "—";
 
   if (btcUSD && usdBRL) {
     const pos = totalBTC * btcUSD * usdBRL;
     const pnl = pos - totalBRL;
-    const fUSD = faltaBTC * btcUSD;
     const fBRL = faltaBTC * btcUSD * usdBRL;
 
-    document.getElementById('k-pos').textContent = 'R$ ' + pos.toLocaleString('pt-BR',{minimumFractionDigits:2});
-    document.getElementById('fl-usd').textContent = '$ ' + fUSD.toLocaleString('pt-BR',{maximumFractionDigits:0});
+    document.getElementById('k-pos').textContent = formatMoney(pos);
+    document.getElementById('fl-usd').textContent = '$ ' + (faltaBTC * btcUSD).toLocaleString('pt-BR',{maximumFractionDigits:0});
     document.getElementById('fl-brl').textContent = 'R$ ' + fBRL.toLocaleString('pt-BR',{maximumFractionDigits:0});
 
     const pnlEl = document.getElementById('k-pnl');
-    pnlEl.textContent = (pnl >= 0 ? '+' : '−') + 'R$ ' + Math.abs(pnl).toLocaleString('pt-BR',{minimumFractionDigits:2});
+    pnlEl.textContent = (pnl >= 0 ? '+' : '−') + formatMoney(Math.abs(pnl));
     pnlEl.style.color = pnl >= 0 ? 'var(--green)' : 'var(--red)';
 
     const stEl = document.getElementById('est-status');
@@ -762,8 +826,11 @@ function updateUI() {
 
     // Tempo Estimado
     const metaStr = document.getElementById('f-meta').value.replace(',','.');
-    if (parseFloat(metaStr) > 0 && faltaBTC > 0) {
-        const meses = fBRL / parseFloat(metaStr);
+    const metaNum = parseFloat(metaStr);
+    if (metaNum > 0 && faltaBTC > 0) {
+        // se a moeda é USD, metaNum é USD, convertemos pra BRL para o calculo dar certo
+        const metaBRL = currencyMode === 'USD' ? metaNum * usdBRL : metaNum;
+        const meses = fBRL / metaBRL;
         const anos = Math.floor(meses / 12);
         const mesesRestantes = Math.ceil(meses % 12);
         let tempo = anos > 0 ? `${anos} ano${anos>1?'s':''}` + (mesesRestantes > 0 ? ` e ${mesesRestantes} mês${mesesRestantes>1?'es':''}` : '') : `${Math.ceil(meses)} mês${Math.ceil(meses)>1?'es':''}`;
@@ -775,17 +842,26 @@ function updateUI() {
 
   const MS = [{v:.001,l:'0.001'},{v:.005,l:'0.005'},{v:.01,l:'0.01'},{v:.05,l:'0.05'},{v:.1,l:'0.10'},{v:.21,l:'0.21'},{v:.5,l:'0.50'},{v:.75,l:'0.75'},{v:1,l:'🏆 1 BTC'}];
   document.getElementById('milestones').innerHTML = MS.map(m => {
-    const done = totalBTC >= m.v;
-    return `<div class="ms${done ? (m.v===1?' trophy':' done') : ''}">${m.l}</div>`;
+    return `<div class="ms${totalBTC >= m.v ? (m.v===1?' trophy':' done') : ''}">${m.l}</div>`;
   }).join('');
 
-  renderChart();
-  checkMilestones(totalBTC);
+  renderChart(); checkMilestones(totalBTC);
 }
 
-// RESTANTE DAS FUNÇÕES (MODAL, EXPORTAR, ETC)
+function checkMilestones(totalBTC) {
+    const MS = [0.001, 0.005, 0.01, 0.05, 0.1, 0.21, 0.5, 0.75, 1];
+    let highestReached = 0;
+    MS.forEach(m => { if(totalBTC >= m) highestReached = m; });
+    
+    let savedMS = parseFloat(localStorage.getItem('highest_ms') || '0');
+    if (highestReached > savedMS && highestReached > 0) {
+        if (typeof confetti === 'function') confetti({ particleCount: 200, spread: 90, origin: { y: 0.5 }, colors: ['#F7931A', '#ffffff', '#6daa45'] });
+        localStorage.setItem('highest_ms', highestReached.toString());
+    } else if (totalBTC < savedMS) localStorage.setItem('highest_ms', highestReached.toString());
+}
+
 function askDelete(id) { openModal('modal-del'); document.getElementById('modal-del-confirm').onclick = () => { aportes = aportes.filter(a => a.id !== id); save(aportes); renderTable(); updateUI(); showToast('Removido'); closeModal('modal-del'); }; }
-function confirmarLimpar() { if(!aportes.length)return; openModal('modal-clr'); document.getElementById('modal-clr-confirm').onclick = () => { aportes=[]; save(aportes); renderTable(); updateUI(); showToast('Tudo limpo'); closeModal('modal-clr'); }; }
+function confirmarLimpar() { if(!aportes.length)return; openModal('modal-clr'); document.getElementById('modal-clr-confirm').onclick = () => { aportes=[]; save(aportes); renderTable(); updateUI(); showToast('Tudo limpo'); closeModal('modal-clr'); localStorage.setItem('highest_ms', '0'); }; }
 function openModal(id) { document.getElementById(id).classList.add('open'); }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 let _toastTimer; function showToast(msg, type='') { const el = document.getElementById('toast'); el.textContent = msg; el.className = 'toast'+(type?' '+type:''); clearTimeout(_toastTimer); requestAnimationFrame(()=>requestAnimationFrame(()=>el.classList.add('show'))); _toastTimer = setTimeout(()=>el.classList.remove('show'), 3600); }
