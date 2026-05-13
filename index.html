@@ -382,8 +382,16 @@ tr:hover td{background:var(--surface2)}
               <span class="estat-val" id="est-freq" style="color:var(--muted)">—</span>
             </div>
             <div class="falta-item">
+              <span class="falta-label">Poder de Compra (1 USD)</span>
+              <span class="estat-val" id="est-sats-usd" style="font-size:13px; color:var(--btc)">— sats</span>
+            </div>
+            <div class="falta-item">
+              <span class="falta-label">Poder de Compra (1 BRL)</span>
+              <span class="estat-val" id="est-sats-brl" style="font-size:13px; color:var(--btc)">— sats</span>
+            </div>
+            <div class="falta-item">
               <span class="falta-label">Total de Registros</span>
-              <span class="estat-val" id="fl-n" style="color:var(--btc)">0</span>
+              <span class="estat-val" id="fl-n" style="color:var(--text)">0</span>
             </div>
         </div>
 
@@ -406,7 +414,8 @@ tr:hover td{background:var(--surface2)}
         <span>Exporte em JSON para backup ou para usar em outro dispositivo</span>
       </div>
       <div class="share-btns">
-        <button class="btn-exp" onclick="exportar()">⬇ Exportar</button>
+        <button class="btn-exp" onclick="exportar()">⬇ Backup (.json)</button>
+        <button class="btn-imp" onclick="exportarCSV()">📊 Excel (.csv)</button>
         <button class="btn-imp" onclick="document.getElementById('file-import').click()">⬆ Importar</button>
         <input type="file" id="file-import" accept=".json,application/json" style="display:none" onchange="importar(event)">
         <button class="btn-clr" onclick="confirmarLimpar()">🗑 Limpar</button>
@@ -853,6 +862,11 @@ function updateUI() {
     document.getElementById('fl-usd').textContent = '$ ' + (faltaBTC * btcUSD).toLocaleString('pt-BR',{maximumFractionDigits:0});
     document.getElementById('fl-brl').textContent = 'R$ ' + fBRL.toLocaleString('pt-BR',{maximumFractionDigits:0});
 
+    const satsUsd = Math.round(100000000 / btcUSD);
+    const satsBrl = Math.round(100000000 / (btcUSD * usdBRL));
+    document.getElementById('est-sats-usd').textContent = satsUsd.toLocaleString('pt-BR') + ' sats';
+    document.getElementById('est-sats-brl').textContent = satsBrl.toLocaleString('pt-BR') + ' sats';
+
     const pnlEl = document.getElementById('k-pnl');
     pnlEl.textContent = (pnl >= 0 ? '+' : '−') + formatMoney(Math.abs(pnl));
     pnlEl.style.color = pnl >= 0 ? 'var(--green)' : 'var(--red)';
@@ -922,8 +936,27 @@ function confirmarLimpar() { if(!aportes.length)return; openModal('modal-clr'); 
 function openModal(id) { document.getElementById(id).classList.add('open'); }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 let _toastTimer; function showToast(msg, type='') { const el = document.getElementById('toast'); el.textContent = msg; el.className = 'toast'+(type?' '+type:''); clearTimeout(_toastTimer); requestAnimationFrame(()=>requestAnimationFrame(()=>el.classList.add('show'))); _toastTimer = setTimeout(()=>el.classList.remove('show'), 3600); }
-function exportar() { if(!aportes.length)return; const blob = new Blob([JSON.stringify({versao:2, aportes},null,2)], {type:'application/json'}); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'missao1btc.json'; a.click(); showToast('Exportado!'); }
+function exportar() { if(!aportes.length)return; const blob = new Blob([JSON.stringify({versao:2, aportes},null,2)], {type:'application/json'}); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'missao1btc_backup.json'; a.click(); showToast('Backup Exportado!'); }
 function importar(evt) { const f=evt.target.files[0]; if(!f)return; const r=new FileReader(); r.onload=e=>{ try{ const raw=JSON.parse(e.target.result); const list=Array.isArray(raw)?raw:(raw.aportes||[]); const valid=list.filter(a=>a.btc&&a.brl); if(!valid.length) throw new Error(); aportes=valid; save(aportes); renderTable(); updateUI(); showToast('Importado!'); }catch{ showToast('Erro na importação','err'); } evt.target.value=''; }; r.readAsText(f); }
+
+function exportarCSV() {
+    if(!aportes.length) return;
+    let csv = "Data;BTC_Comprado;Valor_Pago;Preco_Bitcoin_No_Dia;Nota\n";
+    aportes.forEach(a => {
+        const btc = Number(a.btc).toFixed(8).replace('.',',');
+        const brl = Number(a.brl).toFixed(2).replace('.',',');
+        const preco = Number(a.preco || 0).toFixed(2).replace('.',',');
+        const nota = (a.nota || '').replace(/;/g, ' ');
+        csv += `${a.data};${btc};${brl};${preco};${nota}\n`;
+    });
+    const blob = new Blob(["\ufeff", csv], {type: 'text/csv;charset=utf-8;'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'historico_missao_1btc.csv';
+    a.click();
+    showToast('Planilha Gerada!');
+}
 
 function copyWallet() {
     navigator.clipboard.writeText('bc1p0x5et5mxcw28sp8rxm6tamphq6msuse7lkfslhtxrt307wx8qfkskj3qff').then(() => {
