@@ -176,6 +176,11 @@ header{display:flex;align-items:center;justify-content:space-between;padding:20p
 .btn-imp:hover{background:var(--surface2);color:var(--text)}
 .btn-clr{padding:8px 14px;border:1px solid var(--border);border-radius:var(--rxs);font-size:12px;color:var(--red)}
 .btn-clr:hover{background:var(--red-bg);border-color:var(--red)}
+/* ── HALVING PILL ── */
+.halving-pill{display:flex;align-items:center;gap:7px;background:var(--surface);border:1px solid var(--border);border-radius:999px;padding:7px 14px;font-size:12px;white-space:nowrap;cursor:default}
+.halving-icon{font-size:13px}
+.halving-num{font-family:var(--mono);font-weight:700;color:var(--btc)}
+.halving-lbl{color:var(--muted);font-size:11px}
 
 /* ── TABLE CARD ── */
 .tbl-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-top:16px}
@@ -234,6 +239,12 @@ tr:hover td{background:var(--surface2)}
       </div>
     </div>
     <div class="header-right">
+      <!-- HALVING COUNTDOWN -->
+      <div class="halving-pill" title="Próximo Halving Bitcoin">
+        <span class="halving-icon">⛏️</span>
+        <span class="halving-num" id="halving-days">…</span>
+        <span class="halving-lbl">p/ Halving</span>
+      </div>
       <div class="price-pill">
         <span class="price-dot live" id="price-dot"></span>
         <span style="color:var(--muted);font-size:11px">BTC/USD</span>
@@ -416,10 +427,12 @@ tr:hover td{background:var(--surface2)}
       <div class="share-btns">
         <button class="btn-exp" onclick="exportar()">⬇ Backup (.json)</button>
         <button class="btn-imp" onclick="exportarCSV()">📊 Excel (.csv)</button>
+        <button class="btn-imp" onclick="compartilharCard()" style="color:var(--btc);border-color:var(--btc)">📸 Compartilhar</button>
         <button class="btn-imp" onclick="document.getElementById('file-import').click()">⬆ Importar</button>
         <input type="file" id="file-import" accept=".json,application/json" style="display:none" onchange="importar(event)">
         <button class="btn-clr" onclick="confirmarLimpar()">🗑 Limpar</button>
       </div>
+      <canvas id="share-canvas" style="display:none"></canvas>
     </div>
 
     <!-- TABELA -->
@@ -642,6 +655,7 @@ async function fetchPrice() {
     chgEl.textContent = (chg >= 0 ? '+' : '') + chg.toFixed(2) + '%';
     chgEl.style.color = chg >= 0 ? 'var(--green)' : 'var(--red)';
     dot.className = 'price-dot live';
+    updateHalvingCountdown();
 
     const fp = document.getElementById('f-preco');
     if (!fp.value && document.activeElement !== fp && !editId) {
@@ -689,6 +703,158 @@ function updateChartColors() {
     Chart.defaults.color = theme === 'dark' ? '#8a8680' : '#6b6965';
     chartInstance.options.scales.y.grid.color = theme === 'dark' ? '#2a2823' : '#ddd9d3';
     chartInstance.update();
+}
+
+// ── HALVING COUNTDOWN ──
+function updateHalvingCountdown() {
+    // Próximo halving estimado: ~Abril 2028 (bloco 1.050.000)
+    // Último halving: 19 Abril 2024 (bloco 840.000)
+    // Média: 1 bloco a cada 10 min = 144 blocos/dia = ~1458 dias por halving
+    const lastHalving = new Date('2024-04-19T20:09:26Z');
+    const msPerBlock = 10 * 60 * 1000;
+    const blocksPerHalving = 210000;
+    const nextHalving = new Date(lastHalving.getTime() + blocksPerHalving * msPerBlock);
+    const daysLeft = Math.ceil((nextHalving - Date.now()) / 86400000);
+    const el = document.getElementById('halving-days');
+    if (daysLeft > 0) {
+        el.textContent = daysLeft.toLocaleString('pt-BR') + ' dias';
+    } else {
+        el.textContent = 'HOJE! 🎉';
+    }
+}
+
+// ── ANIMAÇÃO CONTAGEM NUMÉRICA ──
+function animateNumber(el, startVal, endVal, duration, formatter) {
+    const startTime = performance.now();
+    function step(now) {
+        const progress = Math.min((now - startTime) / duration, 1);
+        const eased = 1 - Math.pow(1 - progress, 3); // ease-out cubic
+        const current = startVal + (endVal - startVal) * eased;
+        el.textContent = formatter(current);
+        if (progress < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+}
+
+// ── COMPARTILHAR CARD (CANVAS) ──
+function compartilharCard() {
+    if (!aportes.length) return showToast('Adicione aportes antes de compartilhar', 'err');
+
+    const totalBTC = aportes.reduce((s, a) => s + Number(a.btc), 0);
+    const totalBRL = aportes.reduce((s, a) => s + Number(a.brl), 0);
+    const pct = Math.min(totalBTC / 1, 1) * 100;
+
+    const ranks = [
+        {v:1,t:"Rico pra Carai 🏆"},{v:0.75,t:"Sentindo o Cheiro do Topo 🏔️"},
+        {v:0.50,t:"Baleia em Treinamento 🐋"},{v:0.21,t:"O Escolhido 💊"},
+        {v:0.10,t:"Bruto Demais 🐂"},{v:0.05,t:"Tá Voando 🚀"},
+        {v:0.01,t:"Safadinho Acumulador 😏"},{v:0.005,t:"Entendeu Liberdade 🕊️"},
+        {v:0.001,t:"Primeiros Passos 🚶"}
+    ];
+    let rank = "Sardinha Curiosa 🐟";
+    for (let r of ranks) { if (totalBTC >= r.v) { rank = r.t; break; } }
+
+    const W = 800, H = 420;
+    const canvas = document.getElementById('share-canvas');
+    canvas.width = W; canvas.height = H;
+    const ctx = canvas.getContext('2d');
+
+    // Fundo gradiente
+    const grad = ctx.createLinearGradient(0, 0, W, H);
+    grad.addColorStop(0, '#0f0e0c');
+    grad.addColorStop(1, '#1c1a17');
+    ctx.fillStyle = grad;
+    ctx.roundRect(0, 0, W, H, 16);
+    ctx.fill();
+
+    // Borda laranja
+    ctx.strokeStyle = 'rgba(247,147,26,0.4)';
+    ctx.lineWidth = 1.5;
+    ctx.roundRect(1, 1, W-2, H-2, 16);
+    ctx.stroke();
+
+    // Brilho radial no topo
+    const glow = ctx.createRadialGradient(W/2, 0, 0, W/2, 0, 300);
+    glow.addColorStop(0, 'rgba(247,147,26,0.12)');
+    glow.addColorStop(1, 'transparent');
+    ctx.fillStyle = glow;
+    ctx.fillRect(0, 0, W, H);
+
+    // Logo ₿
+    ctx.fillStyle = '#F7931A';
+    ctx.font = 'bold 38px serif';
+    ctx.fillText('₿', 38, 60);
+
+    // Título
+    ctx.fillStyle = '#e8e4dd';
+    ctx.font = 'bold 22px system-ui';
+    ctx.fillText('Missão 1 BTC', 90, 52);
+    ctx.fillStyle = '#8a8680';
+    ctx.font = '14px system-ui';
+    ctx.fillText('Tracker Pessoal de Bitcoin', 90, 74);
+
+    // BTC acumulado
+    ctx.fillStyle = '#F7931A';
+    ctx.font = 'bold 52px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText(totalBTC.toFixed(8) + ' BTC', W/2, 175);
+
+    // Progresso label
+    ctx.fillStyle = '#8a8680';
+    ctx.font = '14px system-ui';
+    ctx.fillText('de 1 BTC  •  ' + pct.toFixed(4) + '% concluído', W/2, 205);
+
+    // Barra de progresso
+    const barX = 60, barY = 228, barW = W - 120, barH = 16, barR = 8;
+    ctx.fillStyle = '#242118';
+    ctx.beginPath(); ctx.roundRect(barX, barY, barW, barH, barR); ctx.fill();
+    const fillW = Math.max(0, (pct / 100) * barW);
+    if (fillW > 0) {
+        const barGrad = ctx.createLinearGradient(barX, 0, barX + fillW, 0);
+        barGrad.addColorStop(0, 'rgba(247,147,26,0.4)');
+        barGrad.addColorStop(1, '#F7931A');
+        ctx.fillStyle = barGrad;
+        ctx.beginPath(); ctx.roundRect(barX, barY, fillW, barH, barR); ctx.fill();
+    }
+
+    // Stats embaixo
+    const stats = [
+        {label:'Investido', val:'R$ ' + totalBRL.toLocaleString('pt-BR',{maximumFractionDigits:0})},
+        {label:'Aportes', val: aportes.length + ' compras'},
+        {label:'Rank', val: rank}
+    ];
+    const colW = W / 3;
+    stats.forEach((s, i) => {
+        const cx = colW * i + colW / 2;
+        ctx.fillStyle = '#8a8680';
+        ctx.font = '12px system-ui';
+        ctx.textAlign = 'center';
+        ctx.fillText(s.label.toUpperCase(), cx, 285);
+        ctx.fillStyle = '#e8e4dd';
+        ctx.font = 'bold 15px system-ui';
+        ctx.fillText(s.val, cx, 308);
+    });
+
+    // Separador
+    ctx.strokeStyle = '#2a2823';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(60, 328); ctx.lineTo(W-60, 328); ctx.stroke();
+
+    // Rodapé
+    ctx.fillStyle = '#4a4845';
+    ctx.font = '13px system-ui';
+    ctx.textAlign = 'center';
+    ctx.fillText('Feito por EduCabral  •  missao-1-btc.onrender.com', W/2, 370);
+    ctx.fillStyle = '#F7931A';
+    ctx.font = 'bold 13px system-ui';
+    ctx.fillText('₿', W/2 - 152, 370);
+
+    // Download
+    const link = document.createElement('a');
+    link.download = 'missao-1-btc-progresso.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+    showToast('📸 Card gerado! Pronto pra postar!');
 }
 
 // ═══════════════════════════════════════════════
