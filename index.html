@@ -239,11 +239,13 @@ tr:hover td{background:var(--surface2)}
       </div>
     </div>
     <div class="header-right">
-      <!-- HALVING COUNTDOWN -->
-      <div class="halving-pill" title="Próximo Halving Bitcoin">
+      <!-- HALVING COUNTDOWN + BLOCO ATUAL -->
+      <div class="halving-pill" title="Bloco atual do Bitcoin e Próximo Halving">
         <span class="halving-icon">⛏️</span>
-        <span class="halving-num" id="halving-days">…</span>
-        <span class="halving-lbl">p/ Halving</span>
+        <div style="display:flex;flex-direction:column;gap:1px;line-height:1.2">
+          <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--btc)" id="block-height">#…</span>
+          <span style="font-family:var(--mono);font-size:10px;color:var(--muted)"><span id="halving-days">…</span> p/ Halving</span>
+        </div>
       </div>
       <div class="price-pill">
         <span class="price-dot live" id="price-dot"></span>
@@ -707,9 +709,6 @@ function updateChartColors() {
 
 // ── HALVING COUNTDOWN ──
 function updateHalvingCountdown() {
-    // Próximo halving estimado: ~Abril 2028 (bloco 1.050.000)
-    // Último halving: 19 Abril 2024 (bloco 840.000)
-    // Média: 1 bloco a cada 10 min = 144 blocos/dia = ~1458 dias por halving
     const lastHalving = new Date('2024-04-19T20:09:26Z');
     const msPerBlock = 10 * 60 * 1000;
     const blocksPerHalving = 210000;
@@ -720,6 +719,17 @@ function updateHalvingCountdown() {
         el.textContent = daysLeft.toLocaleString('pt-BR') + ' dias';
     } else {
         el.textContent = 'HOJE! 🎉';
+    }
+}
+
+async function fetchBlockHeight() {
+    try {
+        const r = await fetch('https://mempool.space/api/blocks/tip/height');
+        if (!r.ok) throw new Error();
+        const height = await r.json();
+        document.getElementById('block-height').textContent = '#' + Number(height).toLocaleString('pt-BR');
+    } catch {
+        // Silencia o erro, não exibe nada para não poluir a UI
     }
 }
 
@@ -1133,6 +1143,7 @@ function copyWallet() {
 }
 
 fetchPrice(); setInterval(fetchPrice, 60000);
+fetchBlockHeight(); setInterval(fetchBlockHeight, 10 * 60 * 1000); // atualiza a cada 10 minutos
 </script>
 </body>
 </html>
