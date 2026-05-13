@@ -243,7 +243,7 @@ tr:hover td{background:var(--surface2)}
       <div class="halving-pill" title="Bloco atual do Bitcoin e Próximo Halving">
         <span class="halving-icon">⛏️</span>
         <div style="display:flex;flex-direction:column;gap:1px;line-height:1.2">
-          <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--btc)" id="block-height">#…</span>
+          <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--btc)">Bloco <span id="block-height">…</span></span>
           <span style="font-family:var(--mono);font-size:10px;color:var(--muted)"><span id="halving-days">…</span> p/ Halving</span>
         </div>
       </div>
@@ -727,7 +727,7 @@ async function fetchBlockHeight() {
         const r = await fetch('https://mempool.space/api/blocks/tip/height');
         if (!r.ok) throw new Error();
         const height = await r.json();
-        document.getElementById('block-height').textContent = '#' + Number(height).toLocaleString('pt-BR');
+        document.getElementById('block-height').textContent = Number(height).toLocaleString('pt-BR');
     } catch {
         // Silencia o erro, não exibe nada para não poluir a UI
     }
