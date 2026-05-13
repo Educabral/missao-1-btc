@@ -291,6 +291,7 @@ tr:hover td{background:var(--surface2)}
         </div>
       </div>
       <div class="milestones" id="milestones"></div>
+      <div id="rank-text" style="margin-top: 16px; font-weight: 700; font-size: 14px; color: var(--btc); text-align: center; background: var(--surface2); padding: 10px; border-radius: var(--rxs); border: 1px solid var(--border);">Rank: Sardinha Curiosa 🐟</div>
     </section>
 
     <!-- GRID INFERIOR 1 (FORM E FALTA) -->
@@ -883,6 +884,23 @@ function updateUI() {
   document.getElementById('milestones').innerHTML = MS.map(m => {
     return `<div class="ms${totalBTC >= m.v ? (m.v===1?' trophy':' done') : ''}">${m.l}</div>`;
   }).join('');
+
+  const ranks = [
+    {v: 1,    t: "Rico pra Carai 🏆🎩"},
+    {v: 0.75, t: "Sentindo o Cheiro do Topo 🏔️"},
+    {v: 0.50, t: "Baleia em Treinamento 🐋"},
+    {v: 0.21, t: "O Escolhido (21 milhões) 💊"},
+    {v: 0.10, t: "Bruto Demais 🐂"},
+    {v: 0.05, t: "Tá Voando Baixo 🚀"},
+    {v: 0.01, t: "Safadinho Acumulador de Sats 😏"},
+    {v: 0.005,t: "Entendeu o que é Liberdade 🕊️"},
+    {v: 0.001,t: "Primeiros Passos 🚶‍♂️"}
+  ];
+  let rankAtual = "Sardinha Curiosa 🐟";
+  for (let r of ranks) {
+      if (totalBTC >= r.v) { rankAtual = r.t; break; }
+  }
+  document.getElementById('rank-text').innerHTML = `Seu Rank: <span style="color:var(--text)">${rankAtual}</span>`;
 
   renderChart(); checkMilestones(totalBTC);
 }
