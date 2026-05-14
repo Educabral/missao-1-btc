@@ -163,6 +163,20 @@ header{display:flex;align-items:center;justify-content:space-between;padding:20p
 .falta-label{font-size:13px;color:var(--muted);flex-shrink:0}
 .falta-val, .estat-val{font-family:var(--mono);font-size:14px;font-weight:600;text-align:right;word-break:break-all}
 
+/* ── AD BANNERS ── */
+.banners-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
+@media(max-width: 600px) { .banners-grid { grid-template-columns: 1fr; } }
+.ad-banner { position: relative; border-radius: var(--r); padding: 20px 24px; text-decoration: none; display: flex; flex-direction: column; justify-content: center; overflow: hidden; border: 1px solid var(--border); transition: 0.2s; min-height: 100px; }
+.ad-banner:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.4); filter: brightness(1.1); }
+.ad-tag { position: absolute; top: 12px; right: 12px; background: rgba(0,0,0,0.5); color: rgba(255,255,255,0.7); font-size: 10px; padding: 3px 8px; border-radius: 999px; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px; backdrop-filter: blur(4px); }
+.ad-content { position: relative; z-index: 2; }
+.ad-content h3 { font-size: 20px; font-weight: 800; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
+.ad-content p { font-size: 13px; color: var(--text); opacity: 0.9; line-height: 1.4; max-width: 90%; }
+.ad-pixgo { background: linear-gradient(135deg, #0a1226 0%, #00d27822 100%), var(--surface); border-color: #00d27844; }
+.ad-pixgo h3 { color: #00d278; }
+.ad-protege { background: linear-gradient(135deg, #1f1105 0%, #ff6b0022 100%), var(--surface); border-color: #ff6b0044; }
+.ad-protege h3 { color: #ff6b00; }
+
 /* ── SHARE BAR ── */
 .share-bar{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px 20px;margin-top:16px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
 .share-icon{width:34px;height:34px;background:var(--btc-bg);border-radius:var(--rxs);display:grid;place-items:center;color:var(--btc);flex-shrink:0}
@@ -460,6 +474,24 @@ tr:hover td{background:var(--surface2)}
           </tbody>
         </table>
       </div>
+    </div>
+
+    <!-- BANNERS AFILIADOS -->
+    <div class="banners-grid">
+      <a href="https://pixgo.org/cadastro?refer=EduCabral" target="_blank" class="ad-banner ad-pixgo">
+        <div class="ad-tag">Patrocinado</div>
+        <div class="ad-content">
+          <h3><span style="font-size:20px">⚡</span> PixGo</h3>
+          <p>A melhor API de pagamentos via Pix para o seu negócio. Comece com taxas exclusivas.</p>
+        </div>
+      </a>
+      <a href="https://protegecoin.com.br/educabral" target="_blank" class="ad-banner ad-protege">
+        <div class="ad-tag">Segurança</div>
+        <div class="ad-content">
+          <h3><span style="font-size:20px">🛡️</span> ProtegeCoin</h3>
+          <p>Proteja suas criptomoedas de verdade usando as melhores hardware wallets do mercado.</p>
+        </div>
+      </a>
     </div>
 
     <!-- DOAÇÃO -->
