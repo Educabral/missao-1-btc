@@ -16,6 +16,7 @@
 <!-- SCRIPTS EXTERNOS -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-VF80LRPX8W"></script>
@@ -247,16 +248,16 @@ tr:hover td{background:var(--surface2)}
   <!-- HEADER -->
   <header>
     <div class="brand">
-      <div class="brand-icon">₿</div>
+      <div class="brand-icon"><i class="fab fa-bitcoin"></i></div>
       <div>
-        <div class="brand-name">Missão 1 BTC</div>
-        <div class="brand-sub" id="save-status">✓ Dados salvos localmente</div>
+        <div class="brand-name" data-i18n="appTitle">Missão 1 BTC</div>
+        <div class="brand-sub" id="save-status" data-i18n="appSub">✓ Dados salvos localmente</div>
       </div>
     </div>
     <div class="header-right">
       <!-- HALVING COUNTDOWN + BLOCO ATUAL -->
       <div class="halving-pill" title="Bloco atual do Bitcoin e Próximo Halving">
-        <span class="halving-icon">⛏️</span>
+        <span class="halving-icon"><i class="fas fa-hammer"></i></span>
         <div style="display:flex;flex-direction:column;gap:1px;line-height:1.2">
           <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--btc)">Bloco <span id="block-height">…</span></span>
           <span style="font-family:var(--mono);font-size:10px;color:var(--muted)"><span id="halving-days">…</span> p/ Halving</span>
@@ -270,13 +271,15 @@ tr:hover td{background:var(--surface2)}
       </div>
       <!-- BOTÃO TELEGRAM -->
       <a href="https://t.me/Degenzone21" target="_blank" rel="noopener noreferrer" class="icon-btn" title="Notícias 24h no Telegram" style="color:#2AABEE;">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+        <i class="fab fa-telegram-plane"></i>
       </a>
+      <!-- BOTÃO DE IDIOMA -->
+      <button class="icon-btn" id="lang-btn" onclick="toggleLang()" title="Language (EN/PT)" style="font-size:13px; font-weight:700; font-family:var(--mono);">PT</button>
       <!-- BOTÃO DE MOEDA -->
       <button class="icon-btn" id="currency-btn" onclick="toggleCurrency()" title="Alternar Moeda (BRL/USD)" style="font-size:13px; font-weight:700; font-family:var(--mono);">R$</button>
       <!-- BOTÃO DE PRIVACIDADE -->
       <button class="icon-btn" id="privacy-btn" onclick="togglePrivacy()" title="Modo Ocultar Valores">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        <i class="fas fa-eye-slash"></i>
       </button>
       <!-- BOTÃO DE TEMA -->
       <button class="icon-btn" id="theme-btn" onclick="toggleTheme()" title="Alternar tema">
@@ -396,7 +399,7 @@ tr:hover td{background:var(--surface2)}
     <div class="grid2">
         <!-- ESTATÍSTICAS -->
         <div class="card">
-            <h2 class="card-title">📊 Estatísticas e Histórico</h2>
+            <h2 class="card-title"><i class="fas fa-file-excel"></i> Estatísticas e Histórico</h2>
             <div class="falta-item">
               <span class="falta-label">Status do Preço Médio</span>
               <span class="estat-val" id="est-status" style="font-weight:700;">—</span>
@@ -425,7 +428,7 @@ tr:hover td{background:var(--surface2)}
 
         <!-- GRÁFICO -->
         <div class="card">
-            <h2 class="card-title">📈 Curva de Acúmulo (BTC)</h2>
+            <h2 class="card-title"><i class="fas fa-chart-line"></i> Curva de Acúmulo (BTC)</h2>
             <div style="width:100%; height:180px; position:relative;">
                 <canvas id="chartEvolucao"></canvas>
             </div>
@@ -442,12 +445,12 @@ tr:hover td{background:var(--surface2)}
         <span>Exporte em JSON para backup ou para usar em outro dispositivo</span>
       </div>
       <div class="share-btns">
-        <button class="btn-exp" onclick="exportar()">⬇ Backup (.json)</button>
-        <button class="btn-imp" onclick="exportarCSV()">📊 Excel (.csv)</button>
-        <button class="btn-imp" onclick="compartilharCard()" style="color:var(--btc);border-color:var(--btc)">📸 Compartilhar</button>
-        <button class="btn-imp" onclick="document.getElementById('file-import').click()">⬆ Importar</button>
+        <button class="btn-exp" onclick="exportar()"><i class="fas fa-download"></i> Backup (.json)</button>
+        <button class="btn-imp" onclick="exportarCSV()"><i class="fas fa-file-excel"></i> Excel (.csv)</button>
+        <button class="btn-imp" onclick="compartilharCard()" style="color:var(--btc);border-color:var(--btc)"><i class="fas fa-camera"></i> Compartilhar</button>
+        <button class="btn-imp" onclick="document.getElementById('file-import').click()"><i class="fas fa-upload"></i> Importar</button>
         <input type="file" id="file-import" accept=".json,application/json" style="display:none" onchange="importar(event)">
-        <button class="btn-clr" onclick="confirmarLimpar()">🗑 Limpar</button>
+        <button class="btn-clr" onclick="confirmarLimpar()"><i class="fas fa-trash"></i> Limpar</button>
       </div>
       <canvas id="share-canvas" style="display:none"></canvas>
     </div>
@@ -455,7 +458,7 @@ tr:hover td{background:var(--surface2)}
     <!-- TABELA -->
     <div class="tbl-card">
       <div class="tbl-head">
-        <h2 class="tbl-title">📋 Histórico de Aportes</h2>
+        <h2 class="tbl-title"><i class="fas fa-clipboard-list"></i> Histórico de Aportes</h2>
       </div>
       <div class="tbl-wrap">
         <table>
@@ -517,7 +520,7 @@ tr:hover td{background:var(--surface2)}
 <!-- MODAIS -->
 <div class="overlay" id="modal-del" onclick="if(event.target===this)closeModal('modal-del')">
   <div class="modal">
-    <h3>🗑 Excluir aporte?</h3>
+    <h3><i class="fas fa-trash"></i> Excluir aporte?</h3>
     <p>O registro será removido permanentemente. Essa ação não pode ser desfeita.</p>
     <div class="modal-btns">
       <button class="btn-ghost" onclick="closeModal('modal-del')">Cancelar</button>
@@ -898,7 +901,7 @@ function compartilharCard() {
     link.download = 'missao-1-btc-progresso.png';
     link.href = canvas.toDataURL('image/png');
     link.click();
-    showToast('📸 Card gerado! Pronto pra postar!');
+    showToast('<i class="fas fa-camera"></i> Card gerado! Pronto pra postar!');
 }
 
 // ═══════════════════════════════════════════════
@@ -1179,5 +1182,6 @@ function copyWallet() {
 fetchPrice(); setInterval(fetchPrice, 60000);
 fetchBlockHeight(); setInterval(fetchBlockHeight, 10 * 60 * 1000); // atualiza a cada 10 minutos
 </script>
+<script src="lang.js"></script>
 </body>
 </html>
