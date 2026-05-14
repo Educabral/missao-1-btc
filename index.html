@@ -166,10 +166,11 @@ header{display:flex;align-items:center;justify-content:space-between;padding:20p
 /* ── AD BANNERS ── */
 .banners-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
 @media(max-width: 600px) { .banners-grid { grid-template-columns: 1fr; } }
-.ad-banner { position: relative; border-radius: var(--r); padding: 20px 24px; text-decoration: none; display: flex; flex-direction: column; justify-content: center; overflow: hidden; border: 1px solid var(--border); transition: 0.2s; min-height: 100px; }
+.ad-banner { position: relative; border-radius: var(--r); padding: 20px 24px; text-decoration: none; display: flex; flex-direction: row; align-items: center; justify-content: space-between; gap: 15px; overflow: hidden; border: 1px solid var(--border); transition: 0.2s; min-height: 100px; }
 .ad-banner:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.4); filter: brightness(1.1); }
 .ad-tag { position: absolute; top: 12px; right: 12px; background: rgba(0,0,0,0.5); color: rgba(255,255,255,0.7); font-size: 10px; padding: 3px 8px; border-radius: 999px; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px; backdrop-filter: blur(4px); }
-.ad-content { position: relative; z-index: 2; }
+.ad-content { position: relative; z-index: 2; flex: 1; }
+.ad-img { width: 50px; height: 50px; object-fit: contain; z-index: 2; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.5)); flex-shrink: 0; }
 .ad-content h3 { font-size: 20px; font-weight: 800; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
 .ad-content p { font-size: 13px; color: var(--text); opacity: 0.9; line-height: 1.4; max-width: 90%; }
 .ad-pixgo { background: linear-gradient(135deg, #0a1226 0%, #00d27822 100%), var(--surface); border-color: #00d27844; }
@@ -481,16 +482,18 @@ tr:hover td{background:var(--surface2)}
       <a href="https://pixgo.org/cadastro?refer=EduCabral" target="_blank" class="ad-banner ad-pixgo">
         <div class="ad-tag">Patrocinado</div>
         <div class="ad-content">
-          <h3><span style="font-size:20px">⚡</span> PixGo</h3>
+          <h3>PixGo</h3>
           <p>A melhor API de pagamentos via Pix para o seu negócio. Comece com taxas exclusivas.</p>
         </div>
+        <img src="img/pixgo-logo.svg" alt="PixGo" class="ad-img" onerror="this.style.display='none'">
       </a>
       <a href="https://protegecoin.com.br/educabral" target="_blank" class="ad-banner ad-protege">
         <div class="ad-tag">Segurança</div>
         <div class="ad-content">
-          <h3><span style="font-size:20px">🛡️</span> ProHash</h3>
+          <h3>ProHash</h3>
           <p>Proteja suas criptomoedas de verdade usando as melhores hardware wallets do mercado.</p>
         </div>
+        <img src="img/wallet-logo.svg" alt="ProHash Wallet" class="ad-img" onerror="this.style.display='none'">
       </a>
     </div>
 
